@@ -538,7 +538,7 @@ class AetherTwinAI:
 
         # Default help text
         return (
-            "Hello! I am your generative AetherTwin Safety Copilot Chat Assistant. You can ask me:\n\n"
+            "Hello! I am your generative AetherTwin AI Assistant. You can ask me:\n\n"
             "1. 🗄️ **CMDB queries**: *'What is the serial number of Pump P-101?'* or *'Show asset list'*\n"
             "2. 📊 **Telemetry queries**: *'What is the current pump speed?'* or *'Show live status'*\n"
             "3. 🚨 **Safety troubleshooting**: *'How do I mitigate pump cavitation?'*\n"

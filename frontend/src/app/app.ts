@@ -111,7 +111,7 @@ export class App implements OnInit {
   // Chat Assistant states
   public chatQuery = '';
   public chatMessages = signal<Array<{ sender: 'user' | 'bot'; text: string }>>([
-    { sender: 'bot', text: 'Hello! I am your generative AetherTwin Safety Copilot Chat Assistant. How can I help you inspect system health or CMDB records today?' }
+    { sender: 'bot', text: 'Hello! I am your generative AetherTwin AI Assistant. How can I help you inspect system health or CMDB records today?' }
   ]);
   public isChatLoading = signal<boolean>(false);
 
