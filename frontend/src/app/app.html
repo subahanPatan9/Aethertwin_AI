@@ -1,0 +1,1841 @@
+<div class="app-container">
+  <!-- Authentication Login Overlay (Point 3) -->
+  @if (!isAuthenticated()) {
+    <div class="login-overlay">
+      <div class="glass-panel login-card animate-modal-in">
+        <div class="login-header">
+          <svg class="login-logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          <h2>AetherTwin SCADA Remote Login</h2>
+          <p>Provide control panel credentials to unlock process parameters & safety interlocks.</p>
+        </div>
+        
+        <div class="login-body">
+          @if (loginError) {
+            <div class="login-error-banner">
+              ⚠️ {{ loginError }}
+            </div>
+          }
+          
+          <div class="login-form-group">
+            <label>Username / DevOps Login</label>
+            <input type="text" [(ngModel)]="usernameInput" (keyup.enter)="login()" placeholder="e.g. goh0972.hyd016@hackathonindia.net" />
+          </div>
+          
+          <div class="login-form-group">
+            <label>Password</label>
+            <input type="password" [(ngModel)]="passwordInput" (keyup.enter)="login()" placeholder="••••••••••••" />
+          </div>
+          
+          <button class="glow-btn login-btn" (click)="login()">Unlock SCADA Panel</button>
+          
+          <div class="login-hints">
+            <p><strong>Demo Roles:</strong></p>
+            <ul>
+              <li><strong>Control Engineer:</strong> User DevOps credentials (read/write access)</li>
+              <li><strong>SCADA Operator:</strong> <code>operator</code> / <code>operator123</code> (read-only view access)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Connection Error Overlay -->
+  @if (telemetryService.connectionError()) {
+    <div class="error-overlay">
+      <div class="glass-panel error-card">
+        <div class="error-icon">⚡</div>
+        <h2>Connection Interrupted</h2>
+        <p>{{ telemetryService.connectionError() }}</p>
+        <div class="retry-instructions">
+          <p>Please run the FastAPI backend server in your terminal:</p>
+          <code>python backend/app.py</code>
+        </div>
+        <button class="glow-btn retry-btn" (click)="telemetryService.startPolling()">Reconnect Engine</button>
+      </div>
+    </div>
+  }
+
+  <!-- Mobile Header Bar (Point 6) -->
+  <header class="mobile-header">
+    <button class="hamburger-toggle" (click)="toggleMobileMenu()" aria-label="Toggle navigation drawer">
+      <svg class="hamburger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+    <div class="mobile-logo">AETHERTWIN</div>
+    @if (telemetryService.activeFault() !== 'NORMAL') {
+      <div class="mobile-alarm-bell blink-red-fast" (click)="switchTab('copilot')">🚨</div>
+    } @else {
+      <div style="width: 24px;"></div>
+    }
+  </header>
+
+  <!-- Left Sidebar Navigation -->
+  <aside class="sidebar glass-panel" [class.mobile-menu-open]="isMobileMenuOpen()">
+    <button class="mobile-close-btn" (click)="toggleMobileMenu()">&times;</button>
+    
+    <div class="logo-area">
+      <div class="logo-glow"></div>
+      <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+      </svg>
+      <div class="logo-text">
+        <span class="logo-title">AETHERTWIN</span>
+        <span class="logo-subtitle">Engineering Intelligence</span>
+      </div>
+    </div>
+
+    <!-- Live Status Indicators -->
+    <div class="status-panel glass-card">
+      <div class="status-item">
+        <span class="status-label">Sim Engine</span>
+        <div class="status-value">
+          <span class="status-dot" [class.active]="telemetryService.isPolling() && !telemetryService.connectionError()" [class.danger]="telemetryService.connectionError()"></span>
+          <span class="status-txt">{{ telemetryService.connectionError() ? 'OFFLINE' : 'ONLINE' }}</span>
+        </div>
+      </div>
+      <div class="status-item">
+        <span class="status-label">AI Diagnostic</span>
+        <div class="status-value">
+          <span class="status-dot active"></span>
+          <span class="status-txt">ACTIVE</span>
+        </div>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Database</span>
+        <div class="status-value">
+          <span class="status-dot active"></span>
+          <span class="status-txt" style="font-size: 0.75rem; color: #a7f3d0;">Local Fallback</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-links">
+      <button class="nav-btn" [class.active]="activeTab() === 'dashboard'" (click)="switchTab('dashboard'); syncControls();">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="9" rx="1"/>
+          <rect x="14" y="3" width="7" height="5" rx="1"/>
+          <rect x="14" y="12" width="7" height="9" rx="1"/>
+          <rect x="3" y="16" width="7" height="5" rx="1"/>
+        </svg>
+        <span>SCADA Simulator</span>
+      </button>
+
+      <button class="nav-btn" [class.active]="activeTab() === 'copilot'" (click)="switchTab('copilot')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span>AI RCA</span>
+        @if (telemetryService.activeFault() !== 'NORMAL') {
+          <span class="badge badge-danger">!</span>
+        }
+      </button>
+
+      <button class="nav-btn" [class.active]="activeTab() === 'issues'" (click)="switchTab('issues')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <span>Issue Log</span>
+        @if (pendingAlerts() > 0) {
+          <span class="badge badge-danger">{{ pendingAlerts() }}</span>
+        }
+      </button>
+
+      <button class="nav-btn" [class.active]="activeTab() === 'dtdl'" (click)="switchTab('dtdl')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"/>
+          <path d="M12 8V16M8 12H16"/>
+        </svg>
+        <span>Azure Twin (DTDL)</span>
+      </button>
+
+      <button class="nav-btn" [class.active]="activeTab() === 'analytics'" (click)="switchTab('analytics')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 20V10M12 20V4M6 20v-6"/>
+        </svg>
+        <span>Analytics Hub</span>
+      </button>
+
+      <button class="nav-btn" [class.active]="activeTab() === 'architecture'" (click)="switchTab('architecture')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 7V4h16v3M4 15h16M4 17v3h16v-3M9 7h6v8H9z"/>
+        </svg>
+        <span>System Flow Diagram</span>
+      </button>
+
+      <button class="nav-btn" [class.active]="activeTab() === 'settings'" (click)="switchTab('settings')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <span>Sync Config</span>
+      </button>
+
+      <button class="nav-btn guide-btn" [class.active]="activeTab() === 'presentation'" (click)="switchTab('presentation')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        <span>Presentation Guide</span>
+      </button>
+    </nav>
+
+    <!-- User Authentication Details (Point 3) -->
+    @if (isAuthenticated()) {
+      <div class="user-profile-panel glass-card">
+        <div class="profile-info">
+          <div class="user-avatar">{{ loginName().substring(0, 1) }}</div>
+          <div class="user-details">
+            <span class="user-name">{{ loginName() }}</span>
+            <span class="user-role badge" [class.badge-danger]="userRole() === 'ENGINEER'" [class.badge-success]="userRole() === 'OPERATOR'">
+              {{ userRole() }}
+            </span>
+          </div>
+        </div>
+        <button class="logout-btn" (click)="logout()">
+          Sign Out ↗
+        </button>
+      </div>
+    }
+
+    <div class="sidebar-footer">
+      <div class="dev-tag">LTTS OpenHack 2026</div>
+      <div class="sub-tag">Engineering Intelligence</div>
+    </div>
+  </aside>
+
+  <!-- Main Display Workspace -->
+  <main class="main-content">
+    <!-- Header bar -->
+    <header class="workspace-header">
+      <div class="header-title">
+        <h1>
+          @switch (activeTab()) {
+            @case ('dashboard') { SCADA Process Plant Digital Twin }
+            @case ('copilot') { Generative AI Safety Copilot }
+            @case ('issues') { Active & Historical Issues Log }
+            @case ('dtdl') { Azure Digital Twin DTDL Spec }
+            @case ('analytics') { Real-time Telemetry Analytics }
+            @case ('architecture') { Project Architecture & Workflow }
+            @case ('settings') { Sync Config & System Settings }
+            @case ('presentation') { Presentation Walkthrough Assistant }
+          }
+        </h1>
+        <p class="header-desc">
+          @switch (activeTab()) {
+            @case ('dashboard') { Live hardware-in-the-loop physics simulation and valve control interface }
+            @case ('copilot') { Diagnostic root-cause analysis and automated PLC code logic overrides }
+            @case ('issues') { Dedicated console for tracking alert metrics, resolved issues, and incident timelines }
+            @case ('dtdl') { Physical asset DTDL metadata structure and cloud relationships map }
+            @case ('analytics') { Unsupervised anomaly scores, reconstruction loss and raw telemetry streams }
+            @case ('architecture') { Process flow charts and AI agent positioning schematics }
+            @case ('settings') { Sync intervals, threshold alarms, and Twilio API configurations }
+            @case ('presentation') { Step-by-step presentation script and automatic sequence triggers }
+          }
+        </p>
+      </div>
+      
+      <!-- Alarm Control & Quick Status -->
+      <div class="header-controls">
+        <button class="mute-btn" [class.muted]="isMuted()" (click)="toggleMute()" title="Toggle Audible Alarm">
+          @if (isMuted()) {
+            <!-- Mute Speaker Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="control-icon">
+              <path d="M11 5L6 9H2v6h4l5 4V5zM23 9l-6 6M17 9l6 6"/>
+            </svg>
+          } @else {
+            <!-- Speaker Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="control-icon">
+              <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            </svg>
+          }
+        </button>
+
+        @if (telemetryService.activeFault() !== 'NORMAL') {
+          <div class="alarm-header-pill" (click)="activeTab.set('copilot')">
+            <span class="pulse-ring"></span>
+            <span>CRITICAL SYSTEM ALARM</span>
+          </div>
+        } @else {
+          <div class="healthy-header-pill">
+            <span class="green-dot"></span>
+            <span>SYSTEM STABLE</span>
+          </div>
+        }
+      </div>
+    </header>
+
+    <!-- TAB 1: SCADA DASHBOARD -->
+    @if (activeTab() === 'dashboard') {
+      <div class="dashboard-grid">
+        <!-- Visual SCADA Panel -->
+        <div class="glass-panel scada-card">
+          <div class="card-header">
+            <h3>Control Room HMI Console</h3>
+            <span class="flow-status text-cyan">Virtual Plant Visualization v3.0</span>
+          </div>
+
+          <!-- Annunciator Alarm Grid -->
+          <div class="annunciator-grid">
+            <div class="annunciator-tile" [class.active-alarm]="telemetryService.activeFault() === 'PUMP_CAVITATION'">🚨 CAVITATION INTRUSION</div>
+            <div class="annunciator-tile" [class.active-alarm]="telemetryService.activeFault() === 'PUMP_DRY_RUN'">🚨 PUMP DRY RUN</div>
+            <div class="annunciator-tile" [class.active-alarm]="telemetryService.activeFault() === 'VALVE_BLOCKED'">🚨 VALVE BLOCKED</div>
+            <div class="annunciator-tile" [class.active-alarm]="telemetryService.activeFault() === 'PIPE_LEAK'">🚨 PIPELINE LEAK</div>
+            <div class="annunciator-tile" [class.stable]="telemetryService.activeFault() === 'NORMAL'">✅ SYSTEM STABLE</div>
+          </div>
+
+          <!-- Digital Instruments Readouts -->
+          <div class="digital-instruments-strip">
+            <div class="instrument-readout">
+              <span class="instrument-label">FIT-101 (Inlet)</span>
+              <span class="instrument-value font-mono">{{ telemetryService.liveData()?.telemetry?.flow_fit101 }} <small>L/m</small></span>
+            </div>
+            <div class="instrument-readout">
+              <span class="instrument-label">FIT-102 (Outlet)</span>
+              <span class="instrument-value font-mono">{{ telemetryService.liveData()?.telemetry?.flow_fit102 }} <small>L/m</small></span>
+            </div>
+            <div class="instrument-readout">
+              <span class="instrument-label">PIT-101 (Pressure)</span>
+              <span class="instrument-value font-mono text-warning">{{ telemetryService.liveData()?.telemetry?.pressure_pit101 }} <small>PSI</small></span>
+            </div>
+            <div class="instrument-readout">
+              <span class="instrument-label">TEMP-101 (Motor)</span>
+              <span class="instrument-value font-mono">{{ telemetryService.liveData()?.telemetry?.motor_temp }} <small>°C</small></span>
+            </div>
+            <div class="instrument-readout">
+              <span class="instrument-label">VIB-101 (Vibration)</span>
+              <span class="instrument-value font-mono">{{ telemetryService.liveData()?.telemetry?.motor_vibration }} <small>mm/s</small></span>
+            </div>
+          </div>
+          <div class="scada-canvas-container">
+            <!-- Inline SVG SCADA Plant -->
+            <svg class="scada-svg" viewBox="0 0 800 450">
+              <!-- Definitions for Advanced Gradients and Filters -->
+              <defs>
+                <!-- Tank Metallic Base Gradient -->
+                <linearGradient id="tankMetalGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#1e293b"/>
+                  <stop offset="25%" stop-color="#475569"/>
+                  <stop offset="50%" stop-color="#334155"/>
+                  <stop offset="85%" stop-color="#0f172a"/>
+                  <stop offset="100%" stop-color="#1e293b"/>
+                </linearGradient>
+
+                <!-- Water Gradient -->
+                <linearGradient id="water3DGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.85"/>
+                  <stop offset="50%" stop-color="#0284c7" stop-opacity="0.9"/>
+                  <stop offset="100%" stop-color="#0369a1" stop-opacity="0.95"/>
+                </linearGradient>
+
+                <!-- Filter Media Bed Gradients -->
+                <linearGradient id="charcoalGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#334155"/>
+                  <stop offset="100%" stop-color="#1e293b"/>
+                </linearGradient>
+                <linearGradient id="sand3DGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#fbbf24"/>
+                  <stop offset="100%" stop-color="#d97706"/>
+                </linearGradient>
+                <linearGradient id="gravel3DGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#78716c"/>
+                  <stop offset="100%" stop-color="#44403c"/>
+                </linearGradient>
+
+                <!-- Glow Filter for active Alarms -->
+                <filter id="alarmGlow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="6" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+
+              <!-- SUBTLE SCI-FI GRID BACKDROP -->
+              <g stroke="rgba(6, 182, 212, 0.02)" stroke-width="1">
+                <line x1="0" y1="50" x2="800" y2="50"/>
+                <line x1="0" y1="100" x2="800" y2="100"/>
+                <line x1="0" y1="150" x2="800" y2="150"/>
+                <line x1="0" y1="200" x2="800" y2="200"/>
+                <line x1="0" y1="250" x2="800" y2="250"/>
+                <line x1="0" y1="300" x2="800" y2="300"/>
+                <line x1="0" y1="350" x2="800" y2="350"/>
+                <line x1="0" y1="400" x2="800" y2="400"/>
+                
+                <line x1="100" y1="0" x2="100" y2="450"/>
+                <line x1="200" y1="0" x2="200" y2="450"/>
+                <line x1="300" y1="0" x2="300" y2="450"/>
+                <line x1="400" y1="0" x2="400" y2="450"/>
+                <line x1="500" y1="0" x2="500" y2="450"/>
+                <line x1="600" y1="0" x2="600" y2="450"/>
+                <line x1="700" y1="0" x2="700" y2="450"/>
+              </g>
+
+              <!-- 3D HIGH-PRESSURE METALLIC PIPELINES -->
+              <!-- Pipe 1: T101 -> V101 -> Pump -->
+              <path d="M 120 280 L 220 280" stroke="#0f172a" stroke-width="16" fill="none"/>
+              <path d="M 120 280 L 220 280" stroke="#475569" stroke-width="10" fill="none"/>
+              <path d="M 120 280 L 220 280" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none" stroke-dasharray="150,150" transform="translate(0, -3)"/>
+
+              <!-- Pipe 2: Pump -> F101 -->
+              <path d="M 330 280 L 450 280" stroke="#0f172a" stroke-width="16" fill="none"/>
+              <path d="M 330 280 L 450 280" stroke="#475569" stroke-width="10" fill="none"/>
+              <path d="M 330 280 L 450 280" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none" stroke-dasharray="150,150" transform="translate(0, -3)"/>
+
+              <!-- Pipe 3: F101 -> V102 -> T102 -->
+              <path d="M 550 280 L 680 280" stroke="#0f172a" stroke-width="16" fill="none"/>
+              <path d="M 550 280 L 680 280" stroke="#475569" stroke-width="10" fill="none"/>
+              <path d="M 550 280 L 680 280" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none" stroke-dasharray="150,150" transform="translate(0, -3)"/>
+
+              <!-- DYNAMIC FLOWING LIQUID ANIMATION -->
+              <!-- Flow 1: T101 to Pump -->
+              @if (telemetryService.liveData()?.telemetry?.flow_fit101 || 0 > 0.1) {
+                <path d="M 120 280 L 220 280" stroke="var(--primary)" stroke-dasharray="12,16" stroke-width="4" fill="none"
+                      class="flow-line" [style.animationDuration.s]="5 / ((telemetryService.liveData()?.telemetry?.flow_fit101 || 1)/10)"/>
+              }
+
+              <!-- Flow 2: Pump to Filter (with leak alert support) -->
+              @if (telemetryService.liveData()?.telemetry?.flow_fit101 || 0 > 0.1) {
+                @if (telemetryService.activeFault() === 'PIPE_LEAK') {
+                  <path d="M 330 280 L 385 280" stroke="var(--primary)" stroke-dasharray="12,16" stroke-width="4" fill="none" class="flow-line" style="animation-duration: 0.5s;"/>
+                  <path d="M 385 280 L 450 280" stroke="var(--danger)" stroke-dasharray="12,16" stroke-width="4" fill="none" class="flow-line" style="animation-duration: 2s;"/>
+                  <!-- Ruptured pipe spray -->
+                  <path d="M 385 280 Q 370 240 360 230 M 385 280 Q 385 220 380 210 M 385 280 Q 405 240 415 225" stroke="rgba(56, 189, 248, 0.85)" stroke-width="3" fill="none" stroke-linecap="round" class="blink-fast" />
+                  <circle cx="360" cy="225" r="2.5" fill="#38bdf8" class="blink-fast"/>
+                  <circle cx="380" cy="205" r="3" fill="#38bdf8" class="blink-fast"/>
+                  <circle cx="420" cy="220" r="2" fill="#38bdf8" class="blink-fast"/>
+                } @else {
+                  <path d="M 330 280 L 450 280" stroke="var(--primary)" stroke-dasharray="12,16" stroke-width="4" fill="none"
+                        class="flow-line" [style.animationDuration.s]="5 / ((telemetryService.liveData()?.telemetry?.flow_fit101 || 1)/10)"/>
+                }
+              }
+
+              <!-- Flow 3: Filter to T102 -->
+              @if (telemetryService.liveData()?.telemetry?.flow_fit102 || 0 > 0.1) {
+                <path d="M 550 280 L 680 280" stroke="var(--primary)" stroke-dasharray="12,16" stroke-width="4" fill="none"
+                      class="flow-line" [style.animationDuration.s]="5 / ((telemetryService.liveData()?.telemetry?.flow_fit102 || 1)/10)"/>
+              }
+
+              <!-- SOURCE TANK T-101 (3D PRESSURE VESSEL SCHEMATIC) -->
+              <g transform="translate(40, 70)">
+                <!-- Support Legs -->
+                <line x1="15" y1="280" x2="15" y2="340" stroke="#475569" stroke-width="6"/>
+                <line x1="65" y1="280" x2="65" y2="340" stroke="#475569" stroke-width="6"/>
+                <rect x="10" y="335" width="10" height="5" fill="#1e293b"/>
+                <rect x="60" y="335" width="10" height="5" fill="#1e293b"/>
+
+                <!-- Conical Funnel Bottom -->
+                <path d="M 0 250 L 40 290 L 80 250 Z" fill="url(#tankMetalGrad)" stroke="#475569" stroke-width="2.5"/>
+
+                <!-- Main Tank Cylinder -->
+                <rect x="0" y="30" width="80" height="220" fill="url(#tankMetalGrad)" stroke="#475569" stroke-width="2.5"/>
+                
+                <!-- Curved Dome Cap -->
+                <path d="M 0 30 Q 40 0 80 30" fill="url(#tankMetalGrad)" stroke="#475569" stroke-width="2.5"/>
+
+                <!-- Level Ruler lines -->
+                <g stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5">
+                  <line x1="70" y1="50" x2="80" y2="50" />
+                  <line x1="70" y1="105" x2="80" y2="105" />
+                  <line x1="70" y1="160" x2="80" y2="160" />
+                  <line x1="70" y1="215" x2="80" y2="215" />
+                  <text x="65" y="53" fill="rgba(255,255,255,0.4)" font-size="8" text-anchor="end">75%</text>
+                  <text x="65" y="108" fill="rgba(255,255,255,0.4)" font-size="8" text-anchor="end">50%</text>
+                  <text x="65" y="163" fill="rgba(255,255,255,0.4)" font-size="8" text-anchor="end">25%</text>
+                </g>
+
+                <!-- Water Fill Level (Reactively scaled) -->
+                @let t101Lvl = telemetryService.liveData()?.telemetry?.level_t101 || 0;
+                <g transform="translate(0, 0)">
+                  <!-- Clipped height calculation -->
+                  <rect x="2" [attr.y]="250 - (218 * (t101Lvl / 100))" width="76" [attr.height]="218 * (t101Lvl / 100)" fill="url(#water3DGrad)"/>
+                  <!-- Dynamic Wave Top -->
+                  @if (t101Lvl > 2) {
+                    <path [attr.d]="'M 2 ' + (250 - (218 * (t101Lvl / 100))) + ' Q 22 ' + (250 - (218 * (t101Lvl / 100)) - 4) + ' 40 ' + (250 - (218 * (t101Lvl / 100))) + ' T 78 ' + (250 - (218 * (t101Lvl / 100)))"
+                          fill="none" stroke="#e0f2fe" stroke-width="2.5" class="flow-line"/>
+                  }
+                </g>
+
+                <!-- Dome Weld Cap Highlights -->
+                <path d="M 5 30 L 75 30" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+                <path d="M 5 250 L 75 250" stroke="rgba(0,0,0,0.3)" stroke-width="2"/>
+
+                <!-- Floating Label inside vessel -->
+                <rect x="18" y="130" width="44" height="20" rx="3" fill="rgba(8,10,18,0.75)" stroke="rgba(255,255,255,0.1)"/>
+                <text x="40" y="144" fill="#38bdf8" font-size="11" font-weight="800" text-anchor="middle" font-family="monospace">{{ t101Lvl }}%</text>
+                <text x="40" y="-12" fill="var(--color-text)" font-size="11" text-anchor="middle" font-weight="700">SOURCE T-101</text>
+              </g>
+
+              <!-- INLET CONTROL VALVE V-101 (Butterfly Actuator visual) -->
+              <g transform="translate(160, 280)">
+                @let v101Open = telemetryService.liveData()?.telemetry?.valve_v101_open || 0;
+                <!-- Valve Flanges -->
+                <rect x="-18" y="-10" width="6" height="20" fill="#475569" stroke="#1e293b"/>
+                <rect x="12" y="-10" width="6" height="20" fill="#475569" stroke="#1e293b"/>
+
+                <!-- Valve Body -->
+                <polygon points="-12,-12 -12,12 12,-12 12,12" [attr.fill]="v101Open > 90 ? 'var(--success)' : (v101Open > 5 ? 'var(--warning)' : 'var(--danger)')" stroke="#0f172a" stroke-width="1.5"/>
+                <circle cx="0" cy="0" r="5" fill="#0f172a"/>
+                
+                <!-- Pneumatic Cylinder Actuator Head -->
+                <line x1="0" y1="0" x2="0" y2="-22" stroke="#64748b" stroke-width="3.5"/>
+                <rect x="-12" y="-32" width="24" height="10" rx="2" fill="url(#tankMetalGrad)" stroke="#1e293b"/>
+                <!-- Status LED -->
+                <circle cx="0" cy="-27" r="3" [attr.fill]="v101Open > 5 ? '#10b981' : '#ef4444'" class="blink-medium"/>
+
+                <text x="0" y="-38" fill="var(--color-text-muted)" font-size="9" text-anchor="middle" font-weight="700" class="font-mono">V-101 ({{ v101Open }}%)</text>
+              </g>
+
+              <!-- BOOSTER PUMP P-101 (Realistic casting casing + cooling ribs) -->
+              @let activeFault = telemetryService.activeFault();
+              <g transform="translate(270, 280)">
+                @let rpmVal = telemetryService.liveData()?.telemetry?.pump_rpm || 0;
+                @let hasPumpAnom = activeFault === 'PUMP_CAVITATION' || activeFault === 'PUMP_DRY_RUN';
+                
+                <!-- Dynamic Diagnostic Anomaly Warning Halo -->
+                @if (hasPumpAnom) {
+                  <circle cx="0" cy="0" r="44" fill="none" stroke="var(--danger)" stroke-width="3" filter="url(#alarmGlow)" class="blink-fast" />
+                  <path d="M 0 -48 L -8 -62 L 8 -62 Z" fill="var(--danger)" class="blink-fast" />
+                  <text x="0" y="-68" fill="var(--danger)" font-size="8" text-anchor="middle" font-weight="800" class="blink-fast">🚨 {{ activeFault === 'PUMP_CAVITATION' ? 'CAVITATING' : 'DRY RUN' }}</text>
+                }
+
+                <!-- Pump Anchored Base Bracket -->
+                <rect x="-30" y="32" width="60" height="8" fill="#334155" stroke="#1e293b"/>
+                <circle cx="-22" cy="36" r="2.5" fill="#0f172a"/>
+                <circle cx="22" cy="36" r="2.5" fill="#0f172a"/>
+
+                <!-- Motor Cooling Fins Housing -->
+                <rect x="-38" y="-18" width="30" height="36" fill="url(#tankMetalGrad)" stroke="#1e293b" rx="2"/>
+                <line x1="-34" y1="-14" x2="-34" y2="14" stroke="#0f172a" stroke-width="2"/>
+                <line x1="-28" y1="-14" x2="-28" y2="14" stroke="#0f172a" stroke-width="2"/>
+                <line x1="-22" y1="-14" x2="-22" y2="14" stroke="#0f172a" stroke-width="2"/>
+                <line x1="-16" y1="-14" x2="-16" y2="14" stroke="#0f172a" stroke-width="2"/>
+
+                <!-- Impeller Scroll Housing -->
+                <circle cx="10" cy="0" r="32" fill="url(#tankMetalGrad)" stroke="#475569" stroke-width="2"/>
+                <path d="M 10 -32 L 25 -45 L 35 -30" fill="none" stroke="#475569" stroke-width="3.5" stroke-linecap="round"/>
+
+                <!-- Spinning Impeller Blades -->
+                <g [class.pump-spinning]="rpmVal > 100" [style.animationDuration.s]="rpmVal > 0 ? (60 / rpmVal * 8) : 0" transform="translate(10, 0)">
+                  <circle cx="0" cy="0" r="24" fill="#0f172a" stroke="rgba(255,255,255,0.06)" stroke-width="2"/>
+                  <path d="M 0 -22 L 0 22 M -22 0 L 22 0" stroke="#38bdf8" stroke-width="4.5" stroke-linecap="round" opacity="0.9"/>
+                  <circle cx="0" cy="0" r="6" fill="#38bdf8"/>
+                </g>
+
+                <text x="-6" y="52" fill="var(--color-text)" font-size="11" text-anchor="middle" font-weight="700">PUMP P-101</text>
+                <text x="-6" y="65" fill="#38bdf8" font-size="10" text-anchor="middle" font-weight="800" font-family="monospace" class="glow-text-cyan">{{ rpmVal }} RPM</text>
+              </g>
+
+              <!-- PIPELINE DISCHARGE SENSOR CLUSTER (PIT-101 & FIT-101 LCD BUBBLES) -->
+              <g transform="translate(390, 280)">
+                @let fit101 = telemetryService.liveData()?.telemetry?.flow_fit101 || 0;
+                @let pit101 = telemetryService.liveData()?.telemetry?.pressure_pit101 || 0;
+                
+                <!-- Sensor Tap Leads -->
+                <line x1="-25" y1="0" x2="-25" y2="-40" stroke="#64748b" stroke-width="2.5"/>
+                <line x1="25" y1="0" x2="25" y2="-40" stroke="#64748b" stroke-width="2.5"/>
+
+                <!-- PIT-101 LCD Transducer Capsule -->
+                <g transform="translate(-25, -46)">
+                  <circle cx="0" cy="0" r="16" fill="#0b0f19" stroke="#64748b" stroke-width="2.5"/>
+                  <rect x="-24" y="-34" width="48" height="16" rx="3" fill="#090d16" stroke="rgba(56, 189, 248, 0.2)" stroke-width="1"/>
+                  <text x="0" y="4" fill="#38bdf8" font-size="8" text-anchor="middle" font-weight="800">PIT-101</text>
+                  <text x="0" y="-22" fill="#38bdf8" font-size="9" text-anchor="middle" font-weight="800" font-family="monospace">{{ pit101 }}</text>
+                </g>
+
+                <!-- FIT-101 LCD Flow Transducer Capsule -->
+                <g transform="translate(25, -46)">
+                  <circle cx="0" cy="0" r="16" fill="#0b0f19" stroke="#64748b" stroke-width="2.5"/>
+                  <rect x="-24" y="-34" width="48" height="16" rx="3" fill="#090d16" stroke="rgba(45, 212, 191, 0.2)" stroke-width="1"/>
+                  <text x="0" y="4" fill="#2dd4bf" font-size="8" text-anchor="middle" font-weight="800">FIT-101</text>
+                  <text x="0" y="-22" fill="#2dd4bf" font-size="9" text-anchor="middle" font-weight="800" font-family="monospace">{{ fit101 }}</text>
+                </g>
+
+                <text x="0" y="20" fill="var(--color-text-muted)" font-size="9" text-anchor="middle" font-weight="700">DISCHARGE MANIFOLD</text>
+              </g>
+
+              <!-- MULTI-MEDIA DEEP BED FILTER F-101 -->
+              <g transform="translate(500, 280)">
+                @let isClogged = activeFault === 'VALVE_CLOG';
+                
+                <!-- Blockage Diagnosis Warning Ring -->
+                @if (isClogged) {
+                  <rect x="-35" y="-55" width="70" height="110" rx="8" fill="none" stroke="var(--danger)" stroke-width="3" filter="url(#alarmGlow)" class="blink-fast" />
+                  <text x="0" y="-68" fill="var(--danger)" font-size="8" text-anchor="middle" font-weight="800" class="blink-fast">🚨 BLOCKAGE CLOG</text>
+                }
+
+                <!-- Filter Steel Vessel Shell -->
+                <rect x="-30" y="-50" width="60" height="100" rx="8" fill="url(#tankMetalGrad)" stroke="#475569" stroke-width="2.5"/>
+                <!-- Dome ends of the filter tank -->
+                <path d="M -30 -50 Q 0 -65 30 -50" fill="url(#tankMetalGrad)" stroke="#475569" stroke-width="2.5" />
+                <path d="M -30 50 Q 0 65 30 50" fill="url(#tankMetalGrad)" stroke="#475569" stroke-width="2.5" />
+
+                <!-- Filter Multimedia Beds (Point 3 visual upgrade) -->
+                <!-- Bed 1: Charcoal Carbon Layer (Top) -->
+                <rect x="-27" y="-35" width="54" height="20" fill="url(#charcoalGrad)" />
+                <text x="0" y="-22" fill="rgba(255,255,255,0.4)" font-size="7" text-anchor="middle" font-weight="700">CARBON</text>
+
+                <!-- Bed 2: Silica Sand Layer (Middle) -->
+                <rect x="-27" y="-12" width="54" height="24" fill="url(#sand3DGrad)" />
+                <text x="0" y="3" fill="rgba(255,255,255,0.5)" font-size="7" text-anchor="middle" font-weight="700">SILICA SAND</text>
+
+                <!-- Bed 3: Garnet Gravel Support Layer (Bottom) -->
+                <rect x="-27" y="15" width="54" height="20" fill="url(#gravel3DGrad)" />
+                <text x="0" y="27" fill="rgba(255,255,255,0.4)" font-size="7" text-anchor="middle" font-weight="700">GRAVEL</text>
+
+                <!-- Internal Distributor Tube -->
+                <line x1="0" y1="-50" x2="0" y2="45" stroke="#94a3b8" stroke-width="3" stroke-dasharray="2,2"/>
+
+                <!-- Differential Pressure Gauge -->
+                <circle cx="-35" cy="-25" r="10" fill="#0b0f19" stroke="#64748b" stroke-width="2"/>
+                <line x1="-35" y1="-25" x2="-30" y2="-28" stroke="var(--danger)" stroke-width="2"/>
+                
+                <text x="0" y="-74" fill="var(--color-text)" font-size="11" text-anchor="middle" font-weight="700">FILTER F-101</text>
+              </g>
+
+              <!-- OUTLET CONTROL VALVE V-102 (Pneumatic visual) -->
+              <g transform="translate(610, 280)">
+                @let v102Open = telemetryService.liveData()?.telemetry?.valve_v102_open || 0;
+                <!-- Valve Flanges -->
+                <rect x="-18" y="-10" width="6" height="20" fill="#475569" stroke="#1e293b"/>
+                <rect x="12" y="-10" width="6" height="20" fill="#475569" stroke="#1e293b"/>
+
+                <!-- Valve Body -->
+                <polygon points="-12,-12 -12,12 12,-12 12,12" [attr.fill]="v102Open > 90 ? 'var(--success)' : (v102Open > 5 ? 'var(--warning)' : 'var(--danger)')" stroke="#0f172a" stroke-width="1.5"/>
+                <circle cx="0" cy="0" r="5" fill="#0f172a"/>
+                
+                <!-- Pneumatic Cylinder Actuator Head -->
+                <line x1="0" y1="0" x2="0" y2="-22" stroke="#64748b" stroke-width="3.5"/>
+                <rect x="-12" y="-32" width="24" height="10" rx="2" fill="url(#tankMetalGrad)" stroke="#1e293b"/>
+                <!-- Status LED -->
+                <circle cx="0" cy="-27" r="3" [attr.fill]="v102Open > 5 ? '#10b981' : '#ef4444'" class="blink-medium"/>
+
+                <text x="0" y="-38" fill="var(--color-text-muted)" font-size="9" text-anchor="middle" font-weight="700" class="font-mono">V-102 ({{ v102Open }}%)</text>
+              </g>
+
+              <!-- PRODUCT DISCHARGE TANK T-102 (3D FUNNEL & LEVEL GAUGES) -->
+              <g transform="translate(680, 70)">
+                <!-- Support Legs -->
+                <line x1="15" y1="280" x2="15" y2="340" stroke="#475569" stroke-width="6"/>
+                <line x1="65" y1="280" x2="65" y2="340" stroke="#475569" stroke-width="6"/>
+                <rect x="10" y="335" width="10" height="5" fill="#1e293b"/>
+                <rect x="60" y="335" width="10" height="5" fill="#1e293b"/>
+
+                <!-- Conical Funnel Bottom -->
+                <path d="M 0 250 L 40 290 L 80 250 Z" fill="url(#tankMetalGrad)" stroke="#475569" stroke-width="2.5"/>
+
+                <!-- Main Tank Cylinder -->
+                <rect x="0" y="30" width="80" height="220" fill="url(#tankMetalGrad)" stroke="#475569" stroke-width="2.5"/>
+                
+                <!-- Curved Dome Cap -->
+                <path d="M 0 30 Q 40 0 80 30" fill="url(#tankMetalGrad)" stroke="#475569" stroke-width="2.5"/>
+
+                <!-- Level Ruler lines -->
+                <g stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5">
+                  <line x1="0" y1="50" x2="10" y2="50" />
+                  <line x1="0" y1="105" x2="10" y2="105" />
+                  <line x1="0" y1="160" x2="10" y2="160" />
+                  <line x1="0" y1="215" x2="10" y2="215" />
+                  <text x="15" y="53" fill="rgba(255,255,255,0.4)" font-size="8" text-anchor="start">75%</text>
+                  <text x="15" y="108" fill="rgba(255,255,255,0.4)" font-size="8" text-anchor="start">50%</text>
+                  <text x="15" y="163" fill="rgba(255,255,255,0.4)" font-size="8" text-anchor="start">25%</text>
+                </g>
+
+                <!-- Water Fill Level (Reactively scaled) -->
+                @let t102Lvl = telemetryService.liveData()?.telemetry?.level_t102 || 0;
+                <g transform="translate(0, 0)">
+                  <rect x="2" [attr.y]="250 - (218 * (t102Lvl / 100))" width="76" [attr.height]="218 * (t102Lvl / 100)" fill="url(#water3DGrad)"/>
+                  <!-- Dynamic Wave Top -->
+                  @if (t102Lvl > 2) {
+                    <path [attr.d]="'M 2 ' + (250 - (218 * (t102Lvl / 100))) + ' Q 22 ' + (250 - (218 * (t102Lvl / 100)) - 4) + ' 40 ' + (250 - (218 * (t102Lvl / 100))) + ' T 78 ' + (250 - (218 * (t102Lvl / 100)))"
+                          fill="none" stroke="#e0f2fe" stroke-width="2.5" class="flow-line"/>
+                  }
+                </g>
+
+                <!-- Dome Weld Cap Highlights -->
+                <path d="M 5 30 L 75 30" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+                <path d="M 5 250 L 75 250" stroke="rgba(0,0,0,0.3)" stroke-width="2"/>
+
+                <!-- Floating Label inside vessel -->
+                <rect x="18" y="130" width="44" height="20" rx="3" fill="rgba(8,10,18,0.75)" stroke="rgba(255,255,255,0.1)"/>
+                <text x="40" y="144" fill="#38bdf8" font-size="11" font-weight="800" text-anchor="middle" font-family="monospace">{{ t102Lvl }}%</text>
+                <text x="40" y="-12" fill="var(--color-text)" font-size="11" text-anchor="middle" font-weight="700">PRODUCT T-102</text>
+              </g>
+
+              <!-- DRAIN LINE FROM PRODUCT TANK -->
+              <path d="M 720 360 L 720 420" stroke="#0f172a" stroke-width="16" fill="none"/>
+              <path d="M 720 360 L 720 420" stroke="#475569" stroke-width="10" fill="none"/>
+              @if (telemetryService.liveData()?.telemetry?.drain_valve_open || 0 > 5) {
+                <path d="M 720 360 L 720 420" stroke="var(--primary)" stroke-dasharray="6,6" stroke-width="4" fill="none" class="flow-line" style="animation-duration: 0.8s;"/>
+              }
+              <text x="720" y="435" fill="var(--color-text-muted)" font-size="10" text-anchor="middle" font-weight="700">PLANT DRAIN</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Right Side: Controls and Faults -->
+        <div class="control-panel-column">
+          <!-- Live Alarm Card if fault active -->
+          @if (telemetryService.activeFault() !== 'NORMAL') {
+            <div class="glass-panel alarm-card-widget animate-pulse-glow" (click)="activeTab.set('copilot')">
+              <div class="alarm-badge-lg">CRITICAL FAILURE DETECTED</div>
+              <div class="alarm-fault-title">{{ telemetryService.activeFault() }}</div>
+              <div class="alarm-metrics">
+                <div class="metric">
+                  <span class="label">AI Confidence</span>
+                  <span class="val">{{ telemetryService.aiAnalysis()?.confidence || 0 }}%</span>
+                </div>
+                <div class="metric">
+                  <span class="label">Anomaly Score</span>
+                  <span class="val">{{ telemetryService.aiAnalysis()?.anomaly_score || 0 }}/100</span>
+                </div>
+              </div>
+              <div class="alarm-footer">Click here to open AI Diagnostics & resolution plan →</div>
+            </div>
+          }
+
+          <!-- Capacity Utilization Monitor Widget (Point 5) -->
+          <div class="glass-panel capacity-monitor-card" [class.overload]="(telemetryService.aiAnalysis()?.capacity_utilization || 0) > 90">
+            <div class="capacity-header">
+              <h3>Pump Capacity Utilization</h3>
+              <span class="status-indicator" [class.critical]="(telemetryService.aiAnalysis()?.capacity_utilization || 0) > 90" [class.warning]="(telemetryService.aiAnalysis()?.capacity_utilization || 0) > 75 && (telemetryService.aiAnalysis()?.capacity_utilization || 0) <= 90">
+                {{ telemetryService.aiAnalysis()?.capacity_status || 'NORMAL' }}
+              </span>
+            </div>
+            
+            <div class="utilization-gauge-wrapper">
+              <div class="utilization-bar-container">
+                <div class="utilization-bar" [style.width.%]="telemetryService.aiAnalysis()?.capacity_utilization || 0"></div>
+              </div>
+              <div class="utilization-percentage font-mono">
+                {{ telemetryService.aiAnalysis()?.capacity_utilization || 0 }}%
+              </div>
+            </div>
+            
+            <p class="capacity-message font-mono">
+              {{ telemetryService.aiAnalysis()?.capacity_message || 'Equipment operating within design limits.' }}
+            </p>
+          </div>
+
+          <!-- Process Controls -->
+          <div class="glass-panel controls-card">
+            <div class="card-header-with-status">
+              <h3>Process Operations Panel</h3>
+              @if (userRole() === 'OPERATOR') {
+                <span class="scada-badge badge-success">Read-Only</span>
+              }
+            </div>
+            <p class="panel-desc">Adjust variables to run the plant loop manually.</p>
+
+            @if (userRole() === 'OPERATOR') {
+              <div class="read-only-notice font-mono">
+                🔒 SwSliders locked. Acknowledge-only mode active. Full parameters loop writing requires Control Engineer credentials.
+              </div>
+            }
+            
+            <div class="sliders-container" [class.locked-opacity]="userRole() === 'OPERATOR'">
+              <div class="control-slider">
+                <div class="slider-header">
+                  <label>Booster Pump RPM (P-101)</label>
+                  <span class="slider-value">{{ inputRpm }} RPM</span>
+                </div>
+                <input type="range" min="0" max="3000" step="50" [(ngModel)]="inputRpm" (change)="sendControlUpdate()" [disabled]="userRole() === 'OPERATOR'"/>
+              </div>
+
+              <div class="control-slider">
+                <div class="slider-header">
+                  <label>Inlet Suction Valve (V-101)</label>
+                  <span class="slider-value">{{ inputV101 }}% Open</span>
+                </div>
+                <input type="range" min="0" max="100" step="5" [(ngModel)]="inputV101" (change)="sendControlUpdate()" [disabled]="userRole() === 'OPERATOR'"/>
+              </div>
+
+              <div class="control-slider">
+                <div class="slider-header">
+                  <label>Outlet Flow Valve (V-102)</label>
+                  <span class="slider-value">{{ inputV102 }}% Open</span>
+                </div>
+                <input type="range" min="0" max="100" step="5" [(ngModel)]="inputV102" (change)="sendControlUpdate()" [disabled]="userRole() === 'OPERATOR'"/>
+              </div>
+
+              <div class="control-slider">
+                <div class="slider-header">
+                  <label>Product Drain Rate</label>
+                  <span class="slider-value">{{ inputDrain }}% Open</span>
+                </div>
+                <input type="range" min="0" max="100" step="5" [(ngModel)]="inputDrain" (change)="sendControlUpdate()" [disabled]="userRole() === 'OPERATOR'"/>
+              </div>
+            </div>
+
+            <div class="control-actions">
+              <button class="glow-btn apply-btn" (click)="sendControlUpdate()" [disabled]="userRole() === 'OPERATOR'">Commit Control Loops</button>
+              <button class="sync-btn" (click)="syncControls()" title="Sync from server telemetry">🔄 Sync Settings</button>
+            </div>
+          </div>
+
+          <!-- Fault Injector -->
+          <div class="glass-panel injector-card">
+            <div class="card-header-with-status">
+              <h3>Hardware Fault Injection System</h3>
+              @if (userRole() === 'OPERATOR') {
+                <span class="scada-badge badge-success">Locked</span>
+              }
+            </div>
+            <p class="panel-desc">Simulate physical hardware failure modes to stress test the AI anomaly model.</p>
+
+            @if (userRole() === 'OPERATOR') {
+              <div class="read-only-notice font-mono" style="margin-bottom: 1rem;">
+                🔒 Injection blocked. Operational safety simulations restricted to Engineer profile.
+              </div>
+            }
+            
+            <div class="fault-buttons-grid" [class.locked-opacity]="userRole() === 'OPERATOR'">
+              <button class="fault-btn" [class.active]="selectedFaultToTrigger === 'NORMAL'" (click)="triggerSelectedFault('NORMAL')" [disabled]="userRole() === 'OPERATOR'">
+                <span class="dot green"></span>
+                <span>Healthy Baseline</span>
+              </button>
+              <button class="fault-btn" [class.active]="selectedFaultToTrigger === 'PUMP_CAVITATION'" (click)="triggerSelectedFault('PUMP_CAVITATION')" [disabled]="userRole() === 'OPERATOR'">
+                <span class="dot red"></span>
+                <span>Pump Cavitation</span>
+              </button>
+              <button class="fault-btn" [class.active]="selectedFaultToTrigger === 'PIPE_LEAK'" (click)="triggerSelectedFault('PIPE_LEAK')" [disabled]="userRole() === 'OPERATOR'">
+                <span class="dot red"></span>
+                <span>Discharge Pipe Leak</span>
+              </button>
+              <button class="fault-btn" [class.active]="selectedFaultToTrigger === 'VALVE_CLOG'" (click)="triggerSelectedFault('VALVE_CLOG')" [disabled]="userRole() === 'OPERATOR'">
+                <span class="dot red"></span>
+                <span>Downstream Blockage</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 2: AI COPILOT & DIAGNOSTICS -->
+    @if (activeTab() === 'copilot') {
+      <div class="copilot-grid">
+        <!-- AI Diagnostic Report -->
+        <div class="glass-panel rca-card">
+          <div class="card-header border-glow-danger" [class.border-glow-success]="telemetryService.activeFault() === 'NORMAL'">
+            <div class="header-main">
+              <span class="status-pill" [class.danger]="telemetryService.activeFault() !== 'NORMAL'" [class.success]="telemetryService.activeFault() === 'NORMAL'">
+                {{ telemetryService.activeFault() === 'NORMAL' ? 'SYSTEM NORMAL' : 'ANOMALY CONFIRMED' }}
+              </span>
+              <h3>Edge Diagnostic & Mitigation Report</h3>
+            </div>
+            <div class="header-aside">
+              <span class="label">Model:</span>
+              <span class="val font-mono">AutoEncoder-v4.9</span>
+            </div>
+          </div>
+
+          <div class="rca-body">
+            @if (telemetryService.copilotPlan()) {
+              <!-- Display Root Cause Analysis -->
+              <div class="markdown-view">
+                <!-- Direct manual styling of formatted paragraphs for maximum layout control -->
+                <div class="rca-header-desc">
+                  <div class="rca-box-glow"></div>
+                  <!-- We replace markdown strings dynamically with clean HTML tags -->
+                  <div [innerHTML]="telemetryService.copilotPlan()?.rca"></div>
+                </div>
+                
+                <div class="mitigation-steps-box">
+                  <h4>Recommended Mitigation Protocols</h4>
+                  <pre class="mitigation-txt">{{ telemetryService.copilotPlan()?.mitigation }}</pre>
+                </div>
+              </div>
+
+              <!-- Safety Intervention Trigger -->
+              @if (telemetryService.activeFault() !== 'NORMAL') {
+                <div class="safety-override-banner glass-card border-glow-danger">
+                  <div class="banner-body">
+                    <h5>🚨 AI SAFETY INTERLOCK READY</h5>
+                    <p>Triggering this override will inject safe operational limits directly into the PLC: set pump RPM to 0, close isolation lines, and purge pressure lines.</p>
+                  </div>
+                  <button class="glow-btn kill-btn" (click)="applyMitigationAndSwitchBack()">Apply AI Safety Interlock</button>
+                </div>
+              }
+            } @else {
+              <div class="loading-container">
+                <div class="spinner"></div>
+                <p>Consulting AI Anomaly Diagnostics Hub...</p>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- PLC Code Block -->
+        <div class="glass-panel code-card">
+          <div class="card-header">
+            <h3>Generated IEC 61131-3 PLC Code</h3>
+            <span class="lang-tag font-mono">Structured Text (ST)</span>
+          </div>
+          
+          <div class="code-container font-mono">
+            <pre><code>{{ telemetryService.copilotPlan()?.plc_code || '(* No logic modifications pending *)' }}</code></pre>
+          </div>
+
+          <!-- Azure patch representation -->
+          <div class="azure-patch-container">
+            <h4>Azure Digital Twin State Modification Patch</h4>
+            <div class="patch-box font-mono">
+              <pre><code>{{ telemetryService.copilotPlan()?.dtdl_patch | json }}</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Assistant Panel -->
+        <div class="glass-panel chat-card">
+          <div class="card-header border-glow-cyan">
+            <h3>Generative AI Chat Assistant</h3>
+            <span class="status-indicator online">ONLINE</span>
+          </div>
+          
+          <div class="chat-messages-container">
+            @for (msg of chatMessages(); track $index) {
+              <div class="chat-bubble" [class.user-bubble]="msg.sender === 'user'" [class.bot-bubble]="msg.sender === 'bot'">
+                <div class="bubble-sender">{{ msg.sender === 'user' ? 'Operator' : 'AetherTwin Copilot' }}</div>
+                <div class="bubble-content" [innerHTML]="msg.text"></div>
+              </div>
+            }
+            @if (isChatLoading()) {
+              <div class="chat-bubble bot-bubble loading-bubble">
+                <span class="chat-dot"></span>
+                <span class="chat-dot"></span>
+                <span class="chat-dot"></span>
+              </div>
+            }
+          </div>
+          
+          <div class="chat-input-container">
+            <input type="text" [(ngModel)]="chatQuery" (keyup.enter)="sendChatMessage()" placeholder="Ask about live status, CMDB assets, or troubleshooting..." />
+            <button class="chat-send-btn" (click)="sendChatMessage()">Send</button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 3: AZURE TWIN & DTDL -->
+    @if (activeTab() === 'dtdl') {
+      <div class="dtdl-grid">
+        <!-- DTDL Schema Viewer -->
+        <div class="glass-panel schema-card">
+          <div class="card-header">
+            <h3>Digital Twins Definition Language (DTDL)</h3>
+            <span class="lang-tag font-mono">JSON-LD</span>
+          </div>
+          <div class="schema-code-box font-mono">
+            @if (loadingDtdl()) {
+              <p>Fetching models...</p>
+            } @else {
+              <pre><code>{{ dtdlModels() | json }}</code></pre>
+            }
+          </div>
+        </div>
+
+        <!-- Azure Topology Graph and Work Order Dispatcher -->
+        <div class="azure-actions-column">
+          <!-- Visual Topology -->
+          <div class="glass-panel topology-card">
+            <h3>Digital Twin Relationship Graph</h3>
+            
+            <div class="graph-box">
+              <svg viewBox="0 0 400 240" class="topology-svg">
+                <!-- Graph Lines -->
+                <path d="M 200 60 L 80 150 M 200 60 L 200 150 M 200 60 L 320 150" stroke="#64748b" stroke-width="2" stroke-dasharray="4,4"/>
+                
+                <!-- Root Plant Node -->
+                <g transform="translate(200, 60)">
+                  <rect x="-60" y="-20" width="120" height="40" rx="6" fill="#0f172a" stroke="var(--primary)" stroke-width="2"/>
+                  <text x="0" y="5" fill="var(--color-text)" font-size="10" text-anchor="middle" font-weight="600">WaterTreatmentPlant</text>
+                </g>
+
+                <!-- Sub-node 1 (StorageTank) -->
+                <g transform="translate(80, 150)">
+                  <rect x="-50" y="-15" width="100" height="30" rx="4" fill="#1e293b" stroke="#64748b" stroke-width="1.5"/>
+                  <text x="0" y="4" fill="var(--color-text)" font-size="9" text-anchor="middle">hasSourceTank</text>
+                  <text x="0" y="25" fill="var(--color-text-muted)" font-size="8" text-anchor="middle">StorageTank</text>
+                </g>
+
+                <!-- Sub-node 2 (BoosterPump) -->
+                <g transform="translate(200, 150)">
+                  <rect x="-50" y="-15" width="100" height="30" rx="4" fill="#1e293b" stroke="#64748b" stroke-width="1.5"/>
+                  <text x="0" y="4" fill="var(--color-text)" font-size="9" text-anchor="middle">hasBoosterPump</text>
+                  <text x="0" y="25" fill="var(--color-text-muted)" font-size="8" text-anchor="middle">BoosterPump</text>
+                </g>
+
+                <!-- Sub-node 3 (SandFilter) -->
+                <g transform="translate(320, 150)">
+                  <rect x="-50" y="-15" width="100" height="30" rx="4" fill="#1e293b" stroke="#64748b" stroke-width="1.5"/>
+                  <text x="0" y="4" fill="var(--color-text)" font-size="9" text-anchor="middle">hasSandFilter</text>
+                  <text x="0" y="25" fill="var(--color-text-muted)" font-size="8" text-anchor="middle">SandFilter</text>
+                </g>
+              </svg>
+            </div>
+          </div>
+
+          <!-- CMDB Configuration Management Database (Asset Inventory) -->
+          <div class="glass-panel cmdb-card">
+            <div class="card-header border-glow-cyan">
+              <h3>Configuration Management Database (CMDB)</h3>
+              <span class="status-indicator font-mono">Synced</span>
+            </div>
+            <p class="panel-desc">Physical asset parameters, serial numbers, and vendor procurement links.</p>
+            
+            <div class="cmdb-table-container">
+              <table class="cmdb-table">
+                <thead>
+                  <tr>
+                    <th>Tag</th>
+                    <th>Asset Name</th>
+                    <th>Model</th>
+                    <th>Serial Number</th>
+                    <th>Vendor</th>
+                    <th>Warranty Expiry</th>
+                    <th>Calibration Due</th>
+                    <th>AMC Status</th>
+                    <th>Design Capacity</th>
+                    <th>OEM Link</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (asset of assets(); track asset.id) {
+                    <tr>
+                      <td class="font-mono text-cyan">{{ asset.id }}</td>
+                      <td>{{ asset.name }}</td>
+                      <td>{{ asset.model }}</td>
+                      <td class="font-mono text-muted">{{ asset.serial_number }}</td>
+                      <td>{{ asset.vendor }}</td>
+                      <td>
+                        <span class="scada-badge" [class.badge-danger]="isWarrantyExpired(asset.warranty_expiry)" [class.badge-success]="!isWarrantyExpired(asset.warranty_expiry)">
+                          {{ asset.warranty_expiry }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="scada-badge animate-flash-urgent" [class.badge-danger]="isCalibrationOverdue(asset.calibration_due)" [class.badge-success]="!isCalibrationOverdue(asset.calibration_due)">
+                          {{ asset.calibration_due }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="scada-badge" [class.badge-success]="asset.amc_active" [class.badge-danger]="!asset.amc_active">
+                          {{ asset.amc_active ? 'ACTIVE' : 'INACTIVE' }}
+                        </span>
+                      </td>
+                      <td class="font-mono text-muted text-center">
+                        {{ asset.max_design_capacity }}
+                      </td>
+                      <td>
+                        <a [href]="asset.replacement_url" target="_blank" class="oem-link">
+                          Procure ↗
+                        </a>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Azure DevOps Work Ticket Generation -->
+          <div class="glass-panel work-order-card">
+            <h3>Azure DevOps / Dynamics 365 Integration</h3>
+            <p class="panel-desc">Dispatch a physical maintenance ticket directly into Azure DevOps boards from AI diagnostics.</p>
+            
+            <div class="wo-form">
+              <div class="form-row">
+                <div class="field-group half">
+                  <label>Target Asset ID</label>
+                  <input type="text" [(ngModel)]="woComponent"/>
+                </div>
+                <div class="field-group half">
+                  <label>Severity Priority</label>
+                  <select [(ngModel)]="woPriority">
+                    <option value="CRITICAL">Critical Interlock</option>
+                    <option value="HIGH">High Priority</option>
+                    <option value="MEDIUM">Medium / Warning</option>
+                    <option value="LOW">Scheduled Maintenance</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label>Incident Details Description</label>
+                <textarea rows="3" [(ngModel)]="woDescription"></textarea>
+              </div>
+
+              <button class="glow-btn wo-btn" (click)="dispatchWorkOrder()" [disabled]="creatingWorkOrder()">
+                {{ creatingWorkOrder() ? 'Syncing to Azure...' : 'Dispatch Maintenance via Azure DevOps' }}
+              </button>
+            </div>
+
+            @if (createdWorkOrder()) {
+              <div class="glass-card success-ticket border-glow-success">
+                <div class="ticket-header">
+                  <span class="status-badge green">CONNECTED</span>
+                  <h4>Work Order Created</h4>
+                </div>
+                <p><strong>Ticket ID:</strong> {{ createdWorkOrder()?.ticket_id }}</p>
+                <p><strong>Sync Location:</strong> <a [href]="createdWorkOrder()?.azure_devops_url" target="_blank" class="devops-link">{{ createdWorkOrder()?.azure_devops_url }}</a></p>
+                <p class="ticket-msg">{{ createdWorkOrder()?.message }}</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 4: ANALYTICS HUB -->
+    @if (activeTab() === 'analytics') {
+      <div class="analytics-layout">
+        <!-- Live Diagnostic Gauges -->
+        <div class="glass-panel gauges-panel">
+          <div class="gauge-card glass-card">
+            <span class="label">AI Anomaly Score</span>
+            <div class="val glow-text-cyan" [class.glow-text-red]="telemetryService.aiAnalysis()?.anomaly_score || 0 > 30">
+              {{ telemetryService.aiAnalysis()?.anomaly_score }}%
+            </div>
+            <div class="desc">AutoEncoder Reconstruction error mapping</div>
+          </div>
+          <div class="gauge-card glass-card">
+            <span class="label">Classifier State</span>
+            <div class="val font-mono" [class.text-danger]="telemetryService.activeFault() !== 'NORMAL'" [class.text-success]="telemetryService.activeFault() === 'NORMAL'">
+              {{ telemetryService.activeFault() }}
+            </div>
+            <div class="desc">Active classification label</div>
+          </div>
+          <div class="gauge-card glass-card">
+            <span class="label">Motor Current Draw</span>
+            <div class="val text-warning">{{ telemetryService.liveData()?.telemetry?.motor_current }} A</div>
+            <div class="desc">Electrical energy consumption</div>
+          </div>
+          <div class="gauge-card glass-card">
+            <span class="label">Raw MSE Loss</span>
+            <div class="val font-mono" style="font-size: 1.1rem; color: #a5f3fc;">
+              {{ telemetryService.aiAnalysis()?.reconstruction_error }}
+            </div>
+            <div class="desc">Mean Squared Error validation profile</div>
+          </div>
+        </div>
+
+        <!-- Custom SVG Rolling Charts -->
+        <div class="charts-grid">
+          <!-- Chart 1: Vibration -->
+          <div class="glass-panel chart-card">
+            <h4>Pump Motor Vibration (mm/s)</h4>
+            <div class="svg-chart-container">
+              <svg viewBox="0 0 500 150" class="telemetry-chart">
+                <path [attr.d]="getChartPath('motor_vibration', 0, 15, 'var(--primary)')" fill="none" stroke="var(--primary)" stroke-width="2.5"/>
+              </svg>
+              <!-- Grid overlays -->
+              <div class="chart-y-axis">
+                <span>15.0</span>
+                <span>7.5</span>
+                <span>0.0</span>
+              </div>
+            </div>
+            <div class="chart-footer">Normal threshold: &lt; 2.0 mm/s. Live: {{ telemetryService.liveData()?.telemetry?.motor_vibration }} mm/s</div>
+          </div>
+
+          <!-- Chart 2: Pressure -->
+          <div class="glass-panel chart-card">
+            <h4>Discharge Pipeline Pressure (PSI)</h4>
+            <div class="svg-chart-container">
+              <svg viewBox="0 0 500 150" class="telemetry-chart">
+                <path [attr.d]="getChartPath('pressure_pit101', 0, 80, 'var(--secondary)')" fill="none" stroke="var(--secondary)" stroke-width="2.5"/>
+              </svg>
+              <div class="chart-y-axis">
+                <span>80.0</span>
+                <span>40.0</span>
+                <span>0.0</span>
+              </div>
+            </div>
+            <div class="chart-footer">Normal threshold: &lt; 40.0 PSI. Live: {{ telemetryService.liveData()?.telemetry?.pressure_pit101 }} PSI</div>
+          </div>
+
+          <!-- Chart 3: Mass Flow Delta -->
+          <div class="glass-panel chart-card">
+            <h4>Inlet (FIT-101) vs Outlet (FIT-102) Flow Rates</h4>
+            <div class="svg-chart-container">
+              <svg viewBox="0 0 500 150" class="telemetry-chart">
+                <!-- FIT-101 -->
+                <path [attr.d]="getChartPath('flow_fit101', 0, 30, 'var(--primary)')" fill="none" stroke="var(--primary)" stroke-dasharray="2,2" stroke-width="1.5"/>
+                <!-- FIT-102 -->
+                <path [attr.d]="getChartPath('flow_fit102', 0, 30, 'var(--success)')" fill="none" stroke="var(--success)" stroke-width="2"/>
+              </svg>
+              <div class="chart-y-axis">
+                <span>30.0</span>
+                <span>15.0</span>
+                <span>0.0</span>
+              </div>
+            </div>
+            <div class="chart-footer">
+              <span style="color: var(--primary);">FIT-101: {{ telemetryService.liveData()?.telemetry?.flow_fit101 }}</span> | 
+              <span style="color: var(--success);">FIT-102: {{ telemetryService.liveData()?.telemetry?.flow_fit102 }}</span> (L/min)
+            </div>
+          </div>
+
+          <!-- Chart 4: Motor Temperature -->
+          <div class="glass-panel chart-card">
+            <h4>Booster Pump Temperature (°C)</h4>
+            <div class="svg-chart-container">
+              <svg viewBox="0 0 500 150" class="telemetry-chart">
+                <path [attr.d]="getChartPath('motor_temp', 20, 90, 'var(--danger)')" fill="none" stroke="var(--danger)" stroke-width="2.5"/>
+              </svg>
+              <div class="chart-y-axis">
+                <span>90.0</span>
+                <span>55.0</span>
+                <span>20.0</span>
+              </div>
+            </div>
+            <div class="chart-footer">Normal threshold: &lt; 50°C. Live: {{ telemetryService.liveData()?.telemetry?.motor_temp }}°C</div>
+          </div>
+
+          <!-- Chart 5: Pump Health Index -->
+          <div class="glass-panel chart-card full-width-chart">
+            <h4>Booster Pump Health Index (%) & Predictive Maintenance</h4>
+            <div class="svg-chart-container">
+              <svg viewBox="0 0 500 150" class="telemetry-chart">
+                <path [attr.d]="getChartPath('pump_health_index', 0, 100, '#10b981')" fill="none" stroke="#10b981" stroke-width="2.5"/>
+              </svg>
+              <div class="chart-y-axis">
+                <span>100%</span>
+                <span>50%</span>
+                <span>0%</span>
+              </div>
+            </div>
+            <div class="chart-footer">
+              Predicted failure limit: &lt; 80%. Live: {{ telemetryService.liveData()?.telemetry?.pump_health_index }}% (Total runtime: {{ telemetryService.liveData()?.telemetry?.cumulative_runtime }}s)
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 5: PRESENTATION ASSISTANT -->
+    @if (activeTab() === 'presentation') {
+      <div class="presentation-layout glass-panel">
+        <div class="presentation-header">
+          <div class="badge glow-btn">PRESENTER MODE</div>
+          <h2>Interactive Presentation Assistant & Demo Guide</h2>
+          <p>Follow these 5 structured checkpoints during your hackathon presentation to deliver a stunning pitch to the engineering judges.</p>
+        </div>
+
+        <!-- Steps Timeline Grid -->
+        <div class="timeline-container">
+          <div class="steps-progress-bar">
+            <div class="line"></div>
+            @for (step of presentationSteps; track $index) {
+              <div class="step-dot-container" [class.active]="$index <= currentPresentationStep()" [class.current]="$index === currentPresentationStep()" (click)="currentPresentationStep.set($index)">
+                <div class="dot">{{ $index + 1 }}</div>
+                <div class="title">{{ step.title.substring(3) }}</div>
+              </div>
+            }
+          </div>
+
+          <div class="step-detail-card glass-card border-glow-cyan">
+            <div class="step-num">Step {{ currentPresentationStep() + 1 }} of 5</div>
+            <h3>{{ presentationSteps[currentPresentationStep()].title }}</h3>
+            
+            <div class="step-narrative">
+              <h5>💡 What to explain / say to the judges:</h5>
+              <p>{{ presentationSteps[currentPresentationStep()].description }}</p>
+            </div>
+
+            <div class="step-quick-action">
+              <h5>⚡ Automated Demo Quick Action:</h5>
+              <p>Click the button below to instantly trigger the necessary simulation state and pipeline values for this slide.</p>
+              <button class="glow-btn trigger-action-btn" (click)="runStepAction(currentPresentationStep())">
+                {{ presentationSteps[currentPresentationStep()].actionLabel }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="presentation-nav-buttons">
+          <button class="prev-step-btn" (click)="prevStep()" [disabled]="currentPresentationStep() === 0">← Previous Step</button>
+          
+          <button class="next-step-btn glow-btn" (click)="nextStep()" *ngIf="currentPresentationStep() < presentationSteps.length - 1">Next Step →</button>
+          <button class="next-step-btn finish-btn" (click)="activeTab.set('dashboard')" *ngIf="currentPresentationStep() === presentationSteps.length - 1">Restart Demo Loop</button>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 6: ISSUE LOG DASHBOARD (Point 2) -->
+    @if (activeTab() === 'issues') {
+      <div class="issues-layout glass-panel">
+        <div class="issues-header">
+          <h2>Active & Historical Issues Log</h2>
+          <p>Complete record of plant anomalies, diagnostic classifications, work item statuses, and resolution timelines.</p>
+        </div>
+
+        <!-- Issue Counter Statistics Cards -->
+        <div class="issues-stats-grid">
+          <div class="stat-card glass-card">
+            <div class="stat-header">
+              <span class="stat-icon red">🚨</span>
+              <span class="label">Total Generated</span>
+            </div>
+            <span class="val font-mono">{{ totalAlerts() }}</span>
+          </div>
+          <div class="stat-card glass-card">
+            <div class="stat-header">
+              <span class="stat-icon orange">⚡</span>
+              <span class="label">Pending Action</span>
+            </div>
+            <span class="val font-mono text-danger">{{ pendingAlerts() }}</span>
+          </div>
+          <div class="stat-card glass-card">
+            <div class="stat-header">
+              <span class="stat-icon cyan">⚙️</span>
+              <span class="label">In Progress</span>
+            </div>
+            <span class="val font-mono text-cyan">{{ inProgressAlerts() }}</span>
+          </div>
+          <div class="stat-card glass-card">
+            <div class="stat-header">
+              <span class="stat-icon green">✅</span>
+              <span class="label">Resolved Issues</span>
+            </div>
+            <span class="val font-mono text-success">{{ resolvedAlerts() }}</span>
+          </div>
+        </div>
+
+        <!-- Issues List Table -->
+        <div class="cmdb-table-container">
+          <table class="cmdb-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Anomaly Class</th>
+                <th>Status</th>
+                <th>Diagnostic Narrative Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (issue of faultsHistory(); track issue.timestamp) {
+                <tr class="clickable-row" (click)="openIncidentDetail(issue)" title="Click to view forensic incident report">
+                  <td class="font-mono text-muted">{{ issue.timestamp | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                  <td>
+                    <span class="scada-badge" [class.badge-danger]="issue.type !== 'NORMAL'" [class.badge-success]="issue.type === 'NORMAL'">
+                      {{ issue.type }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="status-pill-badge" 
+                      [class.resolved]="issue.status === 'Resolved'"
+                      [class.in-progress]="issue.status === 'In Progress'"
+                      [class.critical]="issue.status === 'Critical'">
+                      {{ issue.status }}
+                    </span>
+                  </td>
+                  <td>{{ issue.description }}</td>
+                </tr>
+              }
+              @if (faultsHistory().length === 0) {
+                <tr>
+                  <td colspan="4" class="text-center text-muted" style="padding: 2rem;">No historical alarms registered in the database.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Forensic Incident Report Drawer Overlay -->
+        @if (selectedIncident(); as inc) {
+          <div class="incident-drawer-overlay" (click)="closeIncidentDetail()">
+            <div class="incident-drawer" (click)="$event.stopPropagation()">
+              <div class="drawer-header">
+                <div class="drawer-header-left">
+                  <span class="inc-ref font-mono">{{ inc.id }}</span>
+                  <span class="scada-badge" [class.badge-danger]="inc.type !== 'NORMAL'" [class.badge-success]="inc.type === 'NORMAL'">{{ inc.type }}</span>
+                </div>
+                <button class="close-drawer-btn" (click)="closeIncidentDetail()">×</button>
+              </div>
+
+              <div class="drawer-body">
+                <!-- Status & High-level details -->
+                <div class="drawer-section border-glow-accent">
+                  <div class="drawer-grid-row">
+                    <div class="grid-item">
+                      <span class="label">Incident Status</span>
+                      <span class="val status-pill-badge" 
+                        [class.resolved]="inc.status === 'Resolved'"
+                        [class.in-progress]="inc.status === 'In Progress'"
+                        [class.critical]="inc.status === 'Critical'">
+                        {{ inc.status }}
+                      </span>
+                    </div>
+                    <div class="grid-item">
+                      <span class="label">AI Confidence</span>
+                      <span class="val font-mono text-cyan">{{ inc.telemetry.confidence }}%</span>
+                    </div>
+                    <div class="grid-item">
+                      <span class="label">Production Impact</span>
+                      <span class="val text-danger font-weight-700" [class.text-success]="inc.type === 'NORMAL'">{{ inc.impact }}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="impact-desc font-mono">
+                    {{ inc.impactText }}
+                  </div>
+                </div>
+
+                <!-- Process Telemetry Snapshot -->
+                <div class="drawer-section">
+                  <h4>💡 Telemetry Snapshot (Trigger-Time)</h4>
+                  <div class="telemetry-snapshot-grid">
+                    <div class="snap-box">
+                      <span class="lbl">Inlet (FIT-101)</span>
+                      <span class="num font-mono">{{ inc.telemetry.fit101 }} <small>L/min</small></span>
+                    </div>
+                    <div class="snap-box">
+                      <span class="lbl">Outlet (FIT-102)</span>
+                      <span class="num font-mono">{{ inc.telemetry.fit102 }} <small>L/min</small></span>
+                    </div>
+                    <div class="snap-box">
+                      <span class="lbl">Pressure (PIT-101)</span>
+                      <span class="num font-mono text-warning">{{ inc.telemetry.pit101 }} <small>PSI</small></span>
+                    </div>
+                    <div class="snap-box">
+                      <span class="lbl">Motor Temp</span>
+                      <span class="num font-mono">{{ inc.telemetry.temp }} <small>°C</small></span>
+                    </div>
+                    <div class="snap-box">
+                      <span class="lbl">Vibration</span>
+                      <span class="num font-mono">{{ inc.telemetry.vib }} <small>mm/s</small></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Alarms Log -->
+                <div class="drawer-section">
+                  <h4>🚨 Triggered Alarms</h4>
+                  <div class="alarms-container">
+                    <div class="alarm-group">
+                      <span class="group-title text-danger">Critical Alarms</span>
+                      <ul>
+                        @for (alarm of inc.criticalAlarms; track alarm) {
+                          <li class="font-mono text-danger" style="list-style: none;">• {{ alarm }}</li>
+                        }
+                        @if (inc.criticalAlarms.length === 0) {
+                          <li class="font-mono text-muted" style="list-style: none;">• None</li>
+                        }
+                      </ul>
+                    </div>
+                    <div class="alarm-group" style="margin-top: 1rem;">
+                      <span class="group-title text-warning">Minor Alarms</span>
+                      <ul>
+                        @for (alarm of inc.minorAlarms; track alarm) {
+                          <li class="font-mono text-warning" style="list-style: none;">• {{ alarm }}</li>
+                        }
+                        @if (inc.minorAlarms.length === 0) {
+                          <li class="font-mono text-muted" style="list-style: none;">• None</li>
+                        }
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Downtime & Resolution Activities -->
+                <div class="drawer-section">
+                  <h4>⚙️ Mitigation & Maintenance</h4>
+                  <div class="downtime-row">
+                    <div style="margin-bottom: 0.3rem;">
+                      <span class="lbl text-muted">Est. Standard Downtime: </span>
+                      <span class="val font-mono">{{ inc.estDowntime }}</span>
+                    </div>
+                    <div style="margin-bottom: 0.3rem;">
+                      <span class="lbl text-muted">Actual Process Interruption: </span>
+                      <span class="val font-mono text-success">{{ inc.actDowntime }}</span>
+                    </div>
+                    <div>
+                      <span class="lbl text-muted">Total SLA Resolution Duration: </span>
+                      <span class="val font-mono text-cyan">{{ inc.resDuration }}</span>
+                    </div>
+                  </div>
+
+                  <div style="margin-top: 1.2rem;">
+                    <span class="group-title">Executed Maintenance Activities:</span>
+                    <ul class="check-list" style="margin-top: 0.4rem; padding-left: 0;">
+                      @for (act of inc.maintActivities; track act) {
+                        <li class="font-mono" style="list-style: none;">• {{ act }}</li>
+                      }
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- AI Predictive Insights -->
+                <div class="drawer-section border-glow-warning">
+                  <h4>🧠 AI Predictive Diagnostics</h4>
+                  <p class="prediction-text font-mono" style="margin-bottom: 0.8rem;">{{ inc.predictedFailures }}</p>
+                  
+                  <div>
+                    <span class="group-title">Recommended Inspections:</span>
+                    <ul class="inspections-list" style="margin-top: 0.4rem; padding-left: 0;">
+                      @for (insp of inc.recommendedInspections; track insp) {
+                        <li class="font-mono" style="list-style: none;">✓ {{ insp }}</li>
+                      }
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- Incident History Timeline -->
+                <div class="drawer-section">
+                  <h4>📅 Complete Incident Timeline</h4>
+                  <div class="incident-timeline" style="margin-top: 0.8rem;">
+                    @for (step of inc.timeline; track step.time) {
+                      <div class="timeline-item" style="display: flex; gap: 1rem; margin-bottom: 1rem; align-items: flex-start;">
+                        <div class="timeline-time font-mono text-muted" style="font-size: 0.75rem; white-space: nowrap; width: 65px;">{{ step.time | date:'HH:mm:ss' }}</div>
+                        <div class="timeline-details" style="flex: 1;">
+                          <span class="scada-badge font-mono" 
+                            [class.badge-danger]="step.status === 'Anomaly Detected' || step.status === 'Escalated'"
+                            [class.badge-warning]="step.status === 'Pending' || step.status === 'In Progress'"
+                            [class.badge-success]="step.status === 'Resolved' || step.status === 'Normal' || step.status === 'Mitigation Applied'">
+                            {{ step.status }}
+                          </span>
+                          <p class="timeline-desc font-mono" style="font-size: 0.8rem; margin-top: 0.3rem; line-height: 1.4;">{{ step.event }}</p>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- TAB 7: PROJECT ARCHITECTURE & WORKFLOW (Point 5) -->
+    @if (activeTab() === 'architecture') {
+      <div class="architecture-layout glass-panel">
+        <div class="architecture-header">
+          <h2>Project Architecture & Industrial Workflow</h2>
+          <p>Interactive engineering diagram illustrating real-time physical telemetry, edge AI diagnostics, and cloud synchronization pipelines.</p>
+        </div>
+
+        <div class="diagram-container glass-card">
+          <!-- Architecture Flowchart SVG -->
+          <svg viewBox="0 0 800 480" class="architecture-svg">
+            <defs>
+              <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="var(--primary)" stop-opacity="0.2"/>
+                <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.05"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Section Boundary Panels -->
+            <rect x="10" y="50" width="220" height="380" rx="8" fill="url(#glowGrad)" stroke="rgba(6,182,212,0.15)" stroke-width="1.5"/>
+            <text x="120" y="40" fill="var(--color-text-muted)" font-size="11" text-anchor="middle" font-weight="700">PHYSICAL PROCESS LOOP (EDGE)</text>
+
+            <rect x="260" y="50" width="280" height="380" rx="8" fill="url(#glowGrad)" stroke="rgba(6,182,212,0.15)" stroke-width="1.5"/>
+            <text x="400" y="40" fill="var(--color-text-muted)" font-size="11" text-anchor="middle" font-weight="700">AETHERTWIN INTELLIGENCE LAYER</text>
+
+            <rect x="570" y="50" width="220" height="380" rx="8" fill="url(#glowGrad)" stroke="rgba(6,182,212,0.15)" stroke-width="1.5"/>
+            <text x="680" y="40" fill="var(--color-text-muted)" font-size="11" text-anchor="middle" font-weight="700">ENTERPRISE SYSTEM CLOUD</text>
+
+            <!-- Nodes & Connections -->
+            <!-- Plant Node -->
+            <g transform="translate(120, 110)">
+              <rect x="-80" y="-25" width="160" height="50" rx="6" fill="#0f172a" stroke="#64748b" stroke-width="2"/>
+              <text x="0" y="3" fill="#fff" font-size="10" text-anchor="middle" font-weight="700">1. Physical Plant Simulator</text>
+              <text x="0" y="16" fill="var(--color-text-muted)" font-size="8" text-anchor="middle">Water Filtration Physics Loop</text>
+            </g>
+
+            <!-- SCADA Server -->
+            <g transform="translate(120, 240)">
+              <rect x="-80" y="-25" width="160" height="50" rx="6" fill="#0f172a" stroke="var(--primary)" stroke-width="2"/>
+              <text x="0" y="3" fill="#fff" font-size="10" text-anchor="middle" font-weight="700">2. Local SCADA HMI</text>
+              <text x="0" y="16" fill="var(--primary)" font-size="8" text-anchor="middle">FastAPI Engine (app.py)</text>
+            </g>
+
+            <!-- DB Node -->
+            <g transform="translate(120, 370)">
+              <rect x="-80" y="-25" width="160" height="50" rx="6" fill="#0f172a" stroke="#64748b" stroke-width="2"/>
+              <text x="0" y="3" fill="#fff" font-size="10" text-anchor="middle" font-weight="700">3. MongoDB / JSON DB</text>
+              <text x="0" y="16" fill="var(--color-text-muted)" font-size="8" text-anchor="middle">Historical telemetry fallback</text>
+            </g>
+
+            <!-- AI Engine -->
+            <g transform="translate(400, 110)">
+              <rect x="-95" y="-25" width="190" height="50" rx="6" fill="#0f172a" stroke="#a855f7" stroke-width="2"/>
+              <text x="0" y="3" fill="#fff" font-size="10" text-anchor="middle" font-weight="700">4. AI Autoencoder Diagnostics</text>
+              <text x="0" y="16" fill="#c084fc" font-size="8" text-anchor="middle">Anomaly Scoring & Capacity Checks</text>
+            </g>
+
+            <!-- Safety Interlock Code Generator -->
+            <g transform="translate(400, 240)">
+              <rect x="-95" y="-25" width="190" height="50" rx="6" fill="#0f172a" stroke="#10b981" stroke-width="2"/>
+              <text x="0" y="3" fill="#fff" font-size="10" text-anchor="middle" font-weight="700">5. PLC Safety Interlock (ST)</text>
+              <text x="0" y="16" fill="#34d399" font-size="8" text-anchor="middle">Structured Text Generator</text>
+            </g>
+
+            <!-- Copilot Chat Router -->
+            <g transform="translate(400, 370)">
+              <rect x="-95" y="-25" width="190" height="50" rx="6" fill="#0f172a" stroke="var(--primary)" stroke-width="2"/>
+              <text x="0" y="3" fill="#fff" font-size="10" text-anchor="middle" font-weight="700">6. AI Chat Copilot Router</text>
+              <text x="0" y="16" fill="var(--primary)" font-size="8" text-anchor="middle">Azure OpenAI RAG Integration</text>
+            </g>
+
+            <!-- Azure Digital Twins -->
+            <g transform="translate(680, 110)">
+              <rect x="-80" y="-25" width="160" height="50" rx="6" fill="#0f172a" stroke="#0078d4" stroke-width="2"/>
+              <text x="0" y="3" fill="#fff" font-size="10" text-anchor="middle" font-weight="700">7. Azure Digital Twins</text>
+              <text x="0" y="16" fill="#2889e2" font-size="8" text-anchor="middle">DTDL State modifications</text>
+            </g>
+
+            <!-- Azure DevOps Work Items -->
+            <g transform="translate(680, 240)">
+              <rect x="-80" y="-25" width="160" height="50" rx="6" fill="#0f172a" stroke="#f25f22" stroke-width="2"/>
+              <text x="0" y="3" fill="#fff" font-size="10" text-anchor="middle" font-weight="700">8. Azure DevOps Tickets</text>
+              <text x="0" y="16" fill="#f47f4f" font-size="8" text-anchor="middle">REST Maintenance Workorders</text>
+            </g>
+
+            <!-- Twilio SMS Alerts -->
+            <g transform="translate(680, 370)">
+              <rect x="-80" y="-25" width="160" height="50" rx="6" fill="#0f172a" stroke="#ef4444" stroke-width="2"/>
+              <text x="0" y="3" fill="#fff" font-size="10" text-anchor="middle" font-weight="700">9. Twilio Alerting Platform</text>
+              <text x="0" y="16" fill="#f87171" font-size="8" text-anchor="middle">SMS SLA Escalation Broadcasts</text>
+            </g>
+
+            <!-- Flow Arrows -->
+            <!-- Plant -> SCADA -> DB -->
+            <path d="M 120 135 L 120 215" stroke="var(--primary)" stroke-width="2" marker-end="url(#arrow)"/>
+            <path d="M 120 265 L 120 345" stroke="var(--primary)" stroke-width="2" marker-end="url(#arrow)"/>
+            
+            <!-- SCADA -> AI Engine -->
+            <path d="M 200 240 L 305 110" stroke="var(--color-text-muted)" stroke-width="1.5" stroke-dasharray="4,4"/>
+            <path d="M 200 240 L 305 240" stroke="var(--color-text-muted)" stroke-width="1.5" stroke-dasharray="4,4"/>
+            <path d="M 200 240 L 305 370" stroke="var(--color-text-muted)" stroke-width="1.5" stroke-dasharray="4,4"/>
+
+            <!-- AI -> Azure Twins -->
+            <path d="M 495 110 L 600 110" stroke="#0078d4" stroke-width="2"/>
+            
+            <!-- Interlock -> DevOps -->
+            <path d="M 495 240 L 600 240" stroke="#f25f22" stroke-width="2"/>
+            
+            <!-- SMS -> Twilio -->
+            <path d="M 495 370 L 600 370" stroke="#ef4444" stroke-width="2"/>
+
+            <!-- Definition for SVG marker arrow -->
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--primary)"/>
+            </marker>
+          </svg>
+        </div>
+
+        <div class="architecture-narrative glass-card">
+          <h4>💡 How the System Works End-to-End:</h4>
+          <ol>
+            <li><strong>Data Collection:</strong> Sensors on the pump loop (RPM, Flow FIT, Pressure PIT, Temperature, Vibration) stream telemetry to the FastAPI server.</li>
+            <li><strong>AI Diagnostics:</strong> The Autoencoder models calculate Anomaly Scores in real-time, mapping reconstruction errors to classify failures (e.g. Pump Cavitation).</li>
+            <li><strong>Edge Interlocks:</strong> If a fault triggers, the AI Safety agent generates PLC Structured Text code to execute safety overrides.</li>
+            <li><strong>Cloud Syncing:</strong> Azure DTDL models are updated dynamically via JSON patches, while DevOps REST clients submit maintenance tickets directly to remote boards.</li>
+            <li><strong>SLA Alerts:</strong> Twilio API broadcasts SMS alerts to personnel devices if the local operator fails to acknowledge alarms within 15 seconds.</li>
+          </ol>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 8: SYNC SETTINGS & SYSTEM CONFIGURATION (Point 4) -->
+    @if (activeTab() === 'settings') {
+      <div class="settings-layout glass-panel">
+        <div class="settings-header">
+          <h2>Sync Parameters & Credentials Settings</h2>
+          <p>Modify local PLC polling rates, Twilio SMS broadcast configurations, and active safety interlock threshold boundaries.</p>
+        </div>
+
+        <div class="settings-grid">
+          <!-- Left Column: Settings Form -->
+          <div class="glass-panel settings-form-card">
+            <h3>System Settings Form</h3>
+            
+            <div class="form-section">
+              <h4>1. Instrumentation Alarm Thresholds</h4>
+              <div class="form-row">
+                <div class="field-group half">
+                  <label>Max Inlet Pressure Threshold (PSI)</label>
+                  <input type="number" [(ngModel)]="settingsForm.max_pressure_threshold" />
+                </div>
+                <div class="field-group half">
+                  <label>Target Discharge Flow Setpoint (L/min)</label>
+                  <input type="number" [(ngModel)]="settingsForm.normal_flow_setpoint" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="field-group">
+                  <label>Target Storage Water Level (%)</label>
+                  <input type="number" [(ngModel)]="settingsForm.target_water_level" />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h4>2. Twilio SMS Alerts Integration Credentials</h4>
+              <div class="form-row">
+                <div class="field-group half">
+                  <label>Twilio Account SID</label>
+                  <input type="text" [(ngModel)]="settingsForm.twilio_sid" placeholder="ACXXXXXXXXXXXXXXXXXXXX" />
+                </div>
+                <div class="field-group half">
+                  <label>Twilio Auth Token</label>
+                  <input type="password" [(ngModel)]="settingsForm.twilio_token" placeholder="••••••••••••••••" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="field-group half">
+                  <label>Twilio Sender Phone Number</label>
+                  <input type="text" [(ngModel)]="settingsForm.twilio_from" placeholder="+1XXXXXXXXXX" />
+                </div>
+                <div class="field-group half">
+                  <label>Operator Destination Phone Number</label>
+                  <input type="text" [(ngModel)]="settingsForm.operator_phone" placeholder="+91XXXXXXXXXX" />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h4>3. Telemetry Sync Rate Configuration</h4>
+              <div class="form-row">
+                <div class="field-group">
+                  <label>FastAPI Polling Sync Rate (milliseconds)</label>
+                  <select [(ngModel)]="settingsForm.polling_rate">
+                    <option [value]="500">500 ms (High Performance)</option>
+                    <option [value]="1000">1000 ms (Standard Default)</option>
+                    <option [value]="2000">2000 ms (Medium Frequency)</option>
+                    <option [value]="5000">5000 ms (Bandwidth Conservative)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <button class="glow-btn save-settings-btn" (click)="saveSettings()">Commit & Sync Parameters</button>
+          </div>
+
+          <!-- Right Column: Sent Notifications Center (Point 1) -->
+          <div class="glass-panel notifications-history-card">
+            <h3>Dispatched Notifications History</h3>
+            <p class="panel-desc">Real-time audit log of SMS alarms and automated emails sent to remote engineers.</p>
+
+            <div class="notifications-history-list">
+              @for (notif of notificationsHistory(); track notif.timestamp) {
+                <div class="notif-log-item glass-card">
+                  <div class="notif-log-header">
+                    <span class="notif-type-tag" [class.sms]="notif.type === 'SMS'" [class.email]="notif.type === 'Email'" [class.ticket]="notif.type === 'DevOps Ticket'">
+                      {{ notif.type }}
+                    </span>
+                    <span class="notif-time font-mono">{{ notif.timestamp | date:'HH:mm:ss' }}</span>
+                  </div>
+                  <div class="notif-destination font-mono">To: {{ notif.destination }}</div>
+                  <div class="notif-message">{{ notif.message }}</div>
+                  <div class="notif-status-bar">
+                    <span class="status-indicator-dot green"></span>
+                    <span class="status-txt">{{ notif.status }}</span>
+                  </div>
+                </div>
+              }
+              @if (notificationsHistory().length === 0) {
+                <div class="text-center text-muted" style="padding: 3rem 1rem;">
+                  📭 No alert notifications dispatched. System is healthy.
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </main>
+
+  <!-- Critical Alarm Modal Popup -->
+  @if (isAlarmModalOpen() && activeAlarmDetails()) {
+    <div class="modal-overlay">
+      <div class="glass-panel alarm-modal animate-modal-in">
+        <div class="modal-header border-glow-danger">
+          <span class="modal-alert-icon">⚠️</span>
+          <h2>{{ activeAlarmDetails()?.title }}</h2>
+        </div>
+        <div class="modal-body">
+          @if (telemetryService.liveData()?.telemetry?.alarm_acknowledged === false) {
+            <div class="alarm-countdown-banner" [class.escalated]="isEscalated()">
+              @if (isEscalated()) {
+                <span class="countdown-pulse-ring"></span>
+                <strong>🚨 ALARM ESCALATED:</strong> SLA limit breached. Broadcast sent to Directors.
+              } @else {
+                <span class="countdown-dot"></span>
+                <strong>⚠️ ESCALATION SLA ACTIVE:</strong> <strong>{{ escalationCountdown() }}s</strong> remaining to acknowledge.
+              }
+            </div>
+          }
+
+          <p class="modal-warning-text">{{ activeAlarmDetails()?.message }}</p>
+          
+          <div class="modal-diagnostic-stats font-mono">
+            <div class="stat-row">
+              <span class="stat-label">FAULT ID:</span>
+              <span class="stat-value text-danger">{{ activeAlarmDetails()?.faultType }}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">DISCHARGE FIT-101:</span>
+              <span class="stat-value">{{ telemetryService.liveData()?.telemetry?.flow_fit101 || 0 }} L/min</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">OUTLET FIT-102:</span>
+              <span class="stat-value">{{ telemetryService.liveData()?.telemetry?.flow_fit102 || 0 }} L/min</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">PRESSURE PIT-101:</span>
+              <span class="stat-value" [class.text-danger]="(telemetryService.liveData()?.telemetry?.pressure_pit101 || 0) > 45">
+                {{ telemetryService.liveData()?.telemetry?.pressure_pit101 || 0 }} PSI
+              </span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">MOTOR VIBRATION:</span>
+              <span class="stat-value" [class.text-danger]="(telemetryService.liveData()?.telemetry?.motor_vibration || 0) > 5">
+                {{ telemetryService.liveData()?.telemetry?.motor_vibration || 0 }} mm/s
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          @if (telemetryService.liveData()?.telemetry?.alarm_acknowledged === false) {
+            <button class="modal-action-btn ack-btn glow-btn animate-pulse-glow" (click)="acknowledgeAlarm()">
+              Acknowledge Event
+            </button>
+          }
+          <button class="modal-action-btn secondary-btn" (click)="silenceAndCloseModal()">
+            Silence & Close
+          </button>
+          <button class="modal-action-btn primary-btn" (click)="openDiagnosticsTab()">
+            AI RCA
+          </button>
+          <button class="modal-action-btn safe-btn glow-btn animate-pulse-glow" (click)="executeSafetyInterlockFromModal()">
+            Apply AI Safety Interlock
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Floating Toast Alerts Container -->
+  <div class="toast-container">
+    @for (toast of toasts(); track toast.id) {
+      <div class="toast-card glass-panel" [class]="'toast-' + toast.type" (click)="removeToast(toast.id)">
+        <div class="toast-icon">
+          @if (toast.type === 'danger') { 🚨 } @else { ✅ }
+        </div>
+        <div class="toast-content">
+          <div class="toast-title">{{ toast.title }}</div>
+          <div class="toast-message">{{ toast.message }}</div>
+        </div>
+        <button class="toast-close">&times;</button>
+      </div>
+    }
+  </div>
+</div>
