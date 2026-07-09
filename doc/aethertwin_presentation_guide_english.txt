@@ -1,0 +1,209 @@
+AetherTwin: Complete Presentation & Working Guide (English)
+
+This document helps you confidently present the AetherTwin project from start to finish. It explains the challenges faced by industries, how AetherTwin solves those challenges, how each page and button in the application works, and the hardware required for deployment.
+
+1. Problems Faced by Industries Without AetherTwin
+
+Industries such as Water Treatment Plants, Chemical Plants, and Oil & Gas Facilities commonly face the following challenges:
+
+1. Passive Monitoring
+
+Traditional SCADA systems only display live values such as pressure and temperature. They monitor the plant but cannot automatically respond to failures such as pipe leaks or pump malfunctions.
+
+2. Delayed Fault Diagnosis
+
+When equipment such as a pump begins to fail, vibration levels increase. However, operators often detect the problem only after significant damage has already occurred.
+
+3. Manual PLC Programming
+
+During a major plant failure, operations must be stopped while control engineers manually modify, test, and upload PLC (Programmable Logic Controller) logic. This process may take several hours or even days.
+
+4. High Downtime Costs
+
+Every minute of plant downtime results in significant financial losses and reduced productivity.
+
+2. Benefits of AetherTwin
+1. Active Self-Healing
+
+Instead of simply generating alarms, AetherTwin automatically adjusts plant controls and safely moves the plant into a protected operating state when an anomaly is detected.
+
+2. AI-Generated PLC Code
+
+The AI model automatically generates IEC 61131-3 Structured Text (ST) PLC code within seconds, eliminating the need for engineers to manually write recovery logic.
+
+3. Azure Digital Twin Integration
+
+AetherTwin synchronizes with Azure Digital Twins, automatically updating asset relationships and the digital representation of the plant.
+
+4. Azure DevOps Integration
+
+Whenever a fault occurs, AetherTwin automatically creates a maintenance ticket in Azure DevOps and dispatches it to the maintenance team.
+
+3. Project Workflow (Application Walkthrough)
+
+When the application starts, users will see five main tabs in the sidebar.
+
+🏠 Tab 1: SCADA Simulator (Landing Page)
+
+This page displays a live graphical representation of the industrial plant.
+
+Plant Visualization (SVG Graphics)
+Source Tank T-101 & Product Tank T-102
+
+Shows the live water level inside each tank using animated blue water.
+
+Pump P-101
+
+The pump blades rotate while the pump is running. The rotation speed increases as the RPM increases.
+
+Pipes & Fluid Flow
+
+Animated particles represent water flowing through the pipes. During a pipe leak, red-colored water spray is displayed.
+
+Live Sensors
+PIT-101 – Pressure Sensor
+FIT-101 – Flow Sensor
+FIT-102 – Flow Sensor
+
+Sensor readings are displayed in real time.
+
+Process Controls
+Pump RPM Slider
+
+Controls the pump speed between 0 and 3000 RPM.
+
+V-101 (Inlet Valve) & V-102 (Outlet Valve)
+
+Adjust the valve opening percentage between 0% and 100%.
+
+Commit Button
+
+Applies the selected control values to the simulator.
+
+Fault Injection
+Healthy
+
+Runs the plant under normal operating conditions.
+
+Pump Cavitation
+
+Simulates pump cavitation caused by a partially closed inlet valve while the pump is running at high speed. Vibration and temperature increase significantly.
+
+Discharge Pipe Leak
+
+Creates a leak between the pump and the filter, causing a flow imbalance where FIT-101 shows higher flow than FIT-102.
+
+Downstream Blockage
+
+Simulates a clogged filter, causing pressure at PIT-101 to exceed 60 PSI.
+
+Live Alarm Banner
+
+Whenever a fault occurs, a flashing red "CRITICAL SYSTEM ALARM" banner appears in the top-right corner.
+
+🤖 Tab 2: AI Copilot (RCA & PLC Code)
+
+When a fault occurs, users navigate to the AI Copilot page.
+
+Root Cause Analysis (RCA)
+
+The AI analyzes the fault and clearly explains:
+
+Which component failed
+Why the failure occurred
+What caused abnormal vibration, pressure, or temperature
+Mitigation Recommendations
+
+The AI provides recommended actions to safely recover the system.
+
+Apply AI Safety Interlock
+
+This is the most critical button in the application.
+
+When clicked, the AI automatically:
+
+Stops the pump
+Closes the valves
+Locks the PLC logic
+Moves the plant into a safe operating state
+Generated PLC Code
+
+Displays AI-generated IEC 61131-3 Structured Text (ST) code that can be used by automation engineers.
+
+Azure DTDL Patch
+
+Displays the JSON patch used to update Azure Digital Twin status.
+
+🌐 Tab 3: Azure Twin (DTDL)
+DTDL Specification
+
+Displays the Digital Twin Definition Language (DTDL) schema in JSON-LD format.
+
+Relationship Graph
+
+Shows relationships among industrial assets, for example:
+
+Plant → hasSourceTank → StorageTank
+
+Plant → hasBoosterPump → BoosterPump
+
+Azure DevOps Dispatch Panel
+
+Users can enter a maintenance description and click "Dispatch Maintenance via Azure DevOps" to automatically generate a live maintenance ticket.
+
+📊 Tab 4: Analytics Hub
+
+Displays four live analytical charts.
+
+Vibration Graph
+
+Shows increasing vibration levels during pump cavitation.
+
+Pressure Graph
+
+Displays pressure spikes during downstream blockage.
+
+Flow Rate Graph
+
+Compares FIT-101 and FIT-102 flow values.
+
+During a pipe leak, a significant difference appears between the two flow curves.
+
+Temperature Graph
+
+Shows the pump temperature increasing during abnormal operating conditions.
+
+🎬 Tab 5: Presentation Guide
+
+This page serves as a step-by-step presentation assistant during demonstrations or hackathons.
+
+It contains five presentation steps, where each step explains what should be presented to the judges. Clicking the corresponding button automatically runs the required plant scenario.
+
+4. Hardware & Sensor Requirements
+Hardware Required for a Real Plant
+Sensors
+FIT (Flow Transmitter) – Measures water flow.
+PIT (Pressure Transmitter) – Measures pipeline pressure.
+LIT (Level Transmitter) – Measures tank water level.
+Vibration Sensors (Accelerometers) – Detect pump cavitation and mechanical vibration.
+Temperature Sensors (RTDs or Thermocouples) – Measure motor and equipment temperature.
+Industrial Edge Gateway
+
+An industrial gateway (such as Siemens IOT2050 or Advantech Gateway) collects sensor data and transmits it securely to the cloud.
+
+PLCs (Programmable Logic Controllers)
+
+Existing PLCs such as:
+
+Siemens S7-1200
+Allen-Bradley PLC
+
+can be used to control pumps, valves, and other plant equipment.
+
+Do We Need Additional Machines?
+
+No.
+
+There is no need to install additional industrial machines.
+
+AetherTwin integrates with the existing plant infrastructure. By connecting an industrial edge gateway to the current plant network, the application can collect sensor data, monitor the system, perform AI-based analysis, generate PLC recovery logic, update Azure Digital Twins, and automate maintenance workflows without replacing existing equipment.

@@ -1,0 +1,249 @@
+# AetherTwin: Complete Presentation & Working Guide (Telugu-English Hybrid)
+
+Ee document dwara meeru evarikaina AetherTwin project gurinchi chala easy ga, pin-to-pin present cheyyavachu. Indulo industry face chestunna problems, mana app iche solutions, app lo unna prati button/page ela work avuthundi mariyu deeniki kavalsina hardware details clear ga unnayi.
+
+---
+
+# 1. Ee App Lekapothe Industries Face Chestunna Problems (Without AetherTwin)
+
+Prastutam unna industries (Water Treatment, Chemical Plants, Oil & Gas Factories) lo kinda problems unnayi:
+
+### Passive Monitoring (Kevalam Choodadaniki Matrame)
+
+SCADA screens kevalam pressure leda temperature entha undo chupistayi. Kani pipe leak aina leda pump damage avuthunna automatic ga action teesukovu.
+
+### Delayed Diagnosis (Aalasyanga Gurthinchadam)
+
+Pump damage avuthunnappudu vibration perigina, adi pump body damage ayye varaku human operators sarigga identify cheyyaleru.
+
+### Manual Code Fixing (Manushule Code Rayali)
+
+Plant lo major fault vachinappudu operations ni stop chesi, control engineers PLC (Programmable Logic Controller) code ni manually edit chesi, test chesi upload cheyyali. Deeniki konni gantalu leda rojulu padutayi.
+
+### Huge Downtime Losses (Bhari Aarthika Nashtam)
+
+Plant aagipoyina prati nimishaniki companies ki lakshala rupayala nashtam vasthundi.
+
+---
+
+# 2. Mana App Valla Kalige Benefits (Benefits of AetherTwin)
+
+### Active Self-Healing (Taanantata Taane Sarichesukovadam)
+
+Plant lo anomaly vachinappudu ee app kevalam alert ivvadame kaakunda, plant ni safe state ki teesukelladaniki controls ni automatic ga adjust chestundi.
+
+### Generative PLC Code
+
+AI model dwara IEC 61131-3 standards lo PLC Structured Text (ST) code ni oka second lo create chesi istundi. Engineers gantala koddi code rayalsina avasaram undadu.
+
+### Azure Digital Twin Compliance
+
+Idi cloud lo unna digital twin tho connect ayi relationships ni update chestundi.
+
+### Direct DevOps Integration
+
+System damage avagane automatic ga Azure DevOps lo maintenance ticket create ayi technician ki dispatch avuthundi.
+
+---
+
+# 3. Project Working Mariyu Pages Details (How it Works - Starting to Ending)
+
+App open cheyyagane manaki 5 main tabs (Sidebar) kanipistayi.
+
+---
+
+# 🏠 Tab 1: SCADA Simulator (Landing Page)
+
+Idi plant yokka live graphical interface.
+
+## Graphic Design (SVG Drawing)
+
+### Source Tank T-101 & Product Tank T-102
+
+Indulo water level entha undo blue color lo live ga chupistundi.
+
+### Pump P-101
+
+Pump run avuthunnappudu lopala unna blades spin (tiruguthu) untayi. RPM perigite speed ga tirugutayi.
+
+### Pipes & Fluid Flow
+
+Pipes lo water flow avuthunnattu animated dots move avuthayi. Leak vasthe water bayataki spray avuthunnattu red color lo kanipistundi.
+
+### Sensors
+
+PIT-101 (Pressure Sensor), FIT-101 & FIT-102 (Flow Sensors) live readings ni bubbles lo chupistayi.
+
+---
+
+## Process Operations Sliders (Controls)
+
+### Pump RPM Slider
+
+Pump speed ni control chestundi (0 - 3000 RPM).
+
+### V-101 (Inlet Valve) & V-102 (Outlet Valve)
+
+Valves open/close percentage adjust cheyyavachu (0 - 100%).
+
+### Commit Button
+
+Sliders adjust chesaka ee button click chesthe values server simulator ki apply avuthayi.
+
+---
+
+## Fault Injection System (Faults Trigger Cheyyadam)
+
+### Healthy
+
+Plant normal ga work chestundi.
+
+### Pump Cavitation
+
+Inlet valve close ayyi pump fast ga tirigithe pump damage avuthundi. Idi click chesthe vibration mariyu temperature chala ekkuva avuthayi.
+
+### Discharge Pipe Leak
+
+Pump mariyu filter madhya leak create avuthundi. Flow difference vasthundi (FIT-101 lo ekkuva flow, FIT-102 lo takkuva flow untundi).
+
+### Downstream Blockage
+
+Filter clog/block aina state. Pressure PIT-101 lo 60 PSI cross chestundi.
+
+### Live Alarm Banner
+
+Fault vachinappudu top-right lo “CRITICAL SYSTEM ALARM” ani red color lo blinking avuthundi.
+
+---
+
+# 🤖 Tab 2: AI Copilot (RCA & PLC Code)
+
+Fault vachinappudu manam ee tab loki vellali.
+
+### RCA Card
+
+AI chesina “Root Cause Analysis” ni chupistundi. Plant lo ye part lo problem vachindo, vibration enduku perigindo clear ga explain chestundi.
+
+### Mitigation Card
+
+Problem ni ela stop cheyyalo step-by-step recommendations istundi.
+
+### Apply AI Safety Interlock Button
+
+Idi chala important button. Deeni click chesthe AI automatic ga PLC ni lock chesi, pump ni stop chesi, valves ni close chesi plant ni safe state ki marchestundi.
+
+### Generated PLC Code Box
+
+Ikada AI generate chesina IEC Structured Text code kanipistundi. Automation engineers ki idi chala useful.
+
+### Azure DTDL Patch
+
+Cloud lo twin status marchadaniki use ayye JSON patch code ni chupistundi.
+
+---
+
+# 🌐 Tab 3: Azure Twin (DTDL)
+
+### DTDL Specs Window
+
+Digital Twin ki sambandhinchina schema design (JSON-LD) ikada kanipistundi.
+
+### Relationship Graph
+
+Plant assets madhya connections graph rupam lo chupistundi.
+
+Example:
+Plant → hasSourceTank → StorageTank
+Plant → hasBoosterPump → BoosterPump
+
+### Azure DevOps Dispatch Panel
+
+Description enter chesi “Dispatch Maintenance via Azure DevOps” button click chesthe live maintenance ticket create ayi link generate avuthundi.
+
+---
+
+# 📊 Tab 4: Analytics Hub (Graphs Details)
+
+Indulo plugins lekunda direct ga create chesina 4 live graphs untayi.
+
+### Vibration Graph
+
+Vibration perigite waves paiki lestayi. Cavitation time lo idi ekkuva avuthundi.
+
+### Pressure Graph
+
+Blockage vasthe pressure sudden ga increase avuthundi.
+
+### Flow Rates Graph
+
+FIT-101 (Pump Inlet) mariyu FIT-102 (Filter Outlet) graphs ni chupistundi. Pipe leak vasthe rendu lines madhya gap chala ekkuva untundi.
+
+### Temperature Graph
+
+Pump heat ekkuthunte red line paiki velthundi.
+
+---
+
+# 🎬 Tab 5: Presentation Guide
+
+Idi hackathon judges mundu present chestappudu step-by-step guide laga work chestundi.
+
+Indulo 5 steps untayi. Prati step lo judges ki em cheppalo rasuntundi. Pakka unna button click chesthe automatic ga aa plant state run avuthundi.
+
+---
+
+# 4. Hardware & Sensors Requirement
+
+## Nijamaina Plant lo Use Cheyyadaniki Em Kavali?
+
+### Sensors
+
+#### FIT (Flow Transmitter)
+
+Neeti pravaham ni measure cheyyadaniki.
+
+#### PIT (Pressure Transmitter)
+
+Pipeline pressure ni measure cheyyadaniki.
+
+#### LIT (Level Transmitter)
+
+Tank water level telusukodaniki.
+
+#### Vibration Sensor (Accelerometers)
+
+Pump motor vibration measure cheyyadaniki. Pump Cavitation identify cheyyadaniki idi compulsory.
+
+#### Temperature Sensor (RTDs/Thermocouples)
+
+Motor heat ni measure cheyyadaniki.
+
+---
+
+## Edge Gateway
+
+Sensors nundi vachina data ni collect chesi cloud ki pampadaniki industrial gateway kavali.
+
+Examples:
+
+* Siemens IOT2050
+* Advantech Gateway
+
+---
+
+## PLCs (Programmable Logic Controllers)
+
+Motors mariyu valves ni physical ga control cheyyadaniki already plant lo unna PLCs saripothayi.
+
+Examples:
+
+* Siemens S7-1200
+* Allen-Bradley PLC
+
+---
+
+# Mana Application Kakunda Vere Machines Add Cheyyala?
+
+Ledu. Existing plant network ki mana gateway connect chesthe saripothundi. Kotha machines install cheyyalsina avasaram ledu.
+
+Kevalam existing network ki software connection isthe chaalu.
