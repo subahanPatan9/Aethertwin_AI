@@ -405,8 +405,75 @@ class AetherTwinAI:
     def run_chat_query(self, query: str, live_data: dict, assets_list: list) -> str:
         """
         Parses operator chat queries in real-time, matching against CMDB database,
-        live telemetry parameters, or safety guidelines.
+        live telemetry parameters, or safety guidelines. If LLM_API_KEY is present,
+        it uses the LLM to provide a highly contextual response about the entire project.
         """
+        self.llm_key = os.environ.get("LLM_API_KEY", "")
+        
+        # If LLM key is available, leverage it for comprehensive project-related Q&A
+        if self.llm_key:
+            url = "https://api.openai.com/v1/chat/completions"
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.llm_key}"
+            }
+            
+            # Formulate the entire system and project context
+            project_context = f"""
+            You are the AetherTwin Safety Copilot, an advanced Generative AI Assistant for the AetherTwin project.
+            Here is the complete context of the AetherTwin project to help you answer the user's query:
+
+            PROJECT OVERVIEW:
+            - AetherTwin is an AI-powered Generative Digital Twin & Industrial Automation Copilot.
+            - It monitors a physical water filtration loop, classifies faults, mitigates hazards automatically, and exports models to Azure Digital Twins.
+            
+            KEY FEATURES & INTERFACE TABS:
+            1. SCADA Simulator: Displays a gorgeous, premium, 3D-styled SVG plant digital twin. Shows live telemetry (RPM, flow, pressure, vibration, temperature, current) and provides hardware fault injection (Pump Cavitation, Discharge Pipe Leak, Downstream Blockage).
+            2. AI RCA (Diagnostics): Displays the active root-cause analysis, mitigation plans, and generates IEC 61131-3 Structured Text PLC safety code dynamically to isolate/resolve active faults.
+            3. Issue Log: Tracks historical and current system faults with a status workflow (Critical -> In Progress -> Resolved). Includes a slide-out Forensic Incident Report drawer containing telemetry snapshots, alarms, and complete timelines.
+            4. Azure Digital Twin (DTDL): Generates Digital Twin Definition Language (DTDL v2) model interfaces and pushes properties to Azure cloud twins.
+            5. Analytics Hub: Renders SVG rolling charts tracking vibration, pressure, inflow/outflow, and motor temp.
+            6. System Flow Diagram: Displays an interactive engineering flowchart mapping edge telemetry, FastAPI server engines, autoencoder diagnostics, Azure Digital Twins, Twilio notifications, and DevOps boards.
+            7. Sync Config: A settings form to adjust telemetry polling rates, thresholds, and Twilio SMS alarm gateway credentials. It also displays the notification history audit log (Simulated SMS alerts, DevOps tickets, emails).
+
+            LIVE TELEMETRY:
+            {json.dumps(live_data.get('telemetry', {}), indent=2)}
+
+            CMDB ASSETS DATABASE:
+            {json.dumps(assets_list, indent=2)}
+
+            USER QUERY:
+            {query}
+
+            INSTRUCTIONS:
+            - Provide a clear, helpful, and comprehensive response.
+            - You can answer questions about the project's UI, the SCADA system, specific assets (serial numbers, models), telemetry values, safety mitigations, DTDL models, Twilio settings, or the general project architecture.
+            - Keep your tone professional, industrial, and helpful. Use markdown format.
+            """
+
+            payload = {
+                "model": "gpt-3.5-turbo",
+                "messages": [
+                    {"role": "system", "content": "You are a professional industrial engineering AI assistant."},
+                    {"role": "user", "content": project_context}
+                ],
+                "temperature": 0.4
+            }
+
+            try:
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers=headers,
+                    method="POST"
+                )
+                with urllib.request.urlopen(req, timeout=8) as response:
+                    res_data = json.loads(response.read().decode("utf-8"))
+                    content = res_data["choices"][0]["message"]["content"]
+                    return content
+            except Exception as e:
+                print(f"Chat LLM query failed: {e}. Falling back to rule-based parser.")
+
         query_lower = query.lower().strip()
         
         # 1. Asset/CMDB queries
