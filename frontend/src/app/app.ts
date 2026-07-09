@@ -199,13 +199,58 @@ export class App implements OnInit {
       next: (res) => {
         this.chatMessages.update(msgs => [...msgs, { sender: 'bot', text: res.response }]);
         this.isChatLoading.set(false);
+        this.scrollToChatBottom();
       },
       error: (err) => {
         console.error('Chat error:', err);
         this.chatMessages.update(msgs => [...msgs, { sender: 'bot', text: 'Sorry, I encountered an issue processing your query. Please ensure backend is online.' }]);
         this.isChatLoading.set(false);
+        this.scrollToChatBottom();
       }
     });
+  }
+
+  applyChatQuery(queryText: string) {
+    this.chatQuery = queryText;
+    this.sendChatMessage();
+  }
+
+  formatChatMessage(text: string): string {
+    if (!text) return '';
+    let html = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+      
+    // 1. Headers (### Header)
+    html = html.replace(/^### (.*?)$/gm, '<h3 class="chat-header-h3" style="color: var(--primary); margin-top: 0.8rem; margin-bottom: 0.4rem; font-weight: 750;">$1</h3>');
+    html = html.replace(/^## (.*?)$/gm, '<h4 class="chat-header-h4" style="color: var(--primary); margin-top: 0.6rem; margin-bottom: 0.3rem;">$1</h4>');
+    
+    // 2. Bold (**text**)
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #38bdf8;">$1</strong>');
+    
+    // 3. Code blocks (```code```)
+    html = html.replace(/```([\s\S]*?)```/g, '<pre class="chat-code-block" style="background: rgba(8,10,18,0.7); border: 1px solid rgba(255,255,255,0.06); padding: 0.5rem; border-radius: 4px; overflow-x: auto; margin: 0.5rem 0;"><code style="font-family: monospace; font-size: 0.75rem;">$1</code></pre>');
+    
+    // 4. Inline code (`code`)
+    html = html.replace(/`(.*?)`/g, '<code class="chat-inline-code" style="background: rgba(255,255,255,0.08); padding: 1px 4px; border-radius: 3px; font-family: monospace; font-size: 0.8rem; color: #f43f5e;">$1</code>');
+    
+    // 5. Bullet Lists (- item or * item)
+    html = html.replace(/^\s*[-*]\s+(.*?)$/gm, '<li class="chat-list-item" style="margin-left: 1rem; list-style-type: disc; font-size: 0.85rem; margin-bottom: 0.2rem;">$1</li>');
+    
+    // 6. Line breaks
+    html = html.replace(/\n/g, '<br/>');
+    
+    return html;
+  }
+
+  scrollToChatBottom() {
+    setTimeout(() => {
+      const chatScroll = document.querySelector('.chat-messages-scroll');
+      if (chatScroll) {
+        chatScroll.scrollTop = chatScroll.scrollHeight;
+      }
+    }, 100);
   }
 
   // Escalation Countdown timer

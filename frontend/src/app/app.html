@@ -129,12 +129,21 @@
 
       <button class="nav-btn" [class.active]="activeTab() === 'copilot'" (click)="switchTab('copilot')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          <rect x="2" y="3" width="20" height="14" rx="2"/>
+          <line x1="2" y1="20" x2="22" y2="20"/>
+          <line x1="12" y1="17" x2="12" y2="20"/>
         </svg>
         <span>AI RCA</span>
         @if (telemetryService.activeFault() !== 'NORMAL') {
-          <span class="badge badge-danger">!</span>
+          <span class="scada-badge badge-danger">!</span>
         }
+      </button>
+
+      <button class="nav-btn" [class.active]="activeTab() === 'chat'" (click)="switchTab('chat'); scrollToChatBottom();">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+        </svg>
+        <span>Safety Copilot Chat</span>
       </button>
 
       <button class="nav-btn" [class.active]="activeTab() === 'issues'" (click)="switchTab('issues')">
@@ -890,34 +899,7 @@
           </div>
         </div>
 
-        <!-- Chat Assistant Panel -->
-        <div class="glass-panel chat-card">
-          <div class="card-header border-glow-cyan">
-            <h3>Generative AI Chat Assistant</h3>
-            <span class="status-indicator online">ONLINE</span>
-          </div>
-          
-          <div class="chat-messages-container">
-            @for (msg of chatMessages(); track $index) {
-              <div class="chat-bubble" [class.user-bubble]="msg.sender === 'user'" [class.bot-bubble]="msg.sender === 'bot'">
-                <div class="bubble-sender">{{ msg.sender === 'user' ? 'Operator' : 'AetherTwin Copilot' }}</div>
-                <div class="bubble-content" [innerHTML]="msg.text"></div>
-              </div>
-            }
-            @if (isChatLoading()) {
-              <div class="chat-bubble bot-bubble loading-bubble">
-                <span class="chat-dot"></span>
-                <span class="chat-dot"></span>
-                <span class="chat-dot"></span>
-              </div>
-            }
-          </div>
-          
-          <div class="chat-input-container">
-            <input type="text" [(ngModel)]="chatQuery" (keyup.enter)="sendChatMessage()" placeholder="Ask about live status, CMDB assets, or troubleshooting..." />
-            <button class="chat-send-btn" (click)="sendChatMessage()">Send</button>
-          </div>
-        </div>
+
       </div>
     }
 
@@ -1510,6 +1492,97 @@
             </div>
           </div>
         }
+      </div>
+    }
+
+    <!-- TAB 6.5: SAFETY COPILOT CHAT WORKSPACE -->
+    @if (activeTab() === 'chat') {
+      <div class="chat-workspace-layout glass-panel">
+        <div class="chat-header">
+          <h2>Safety Copilot Chat Workspace</h2>
+          <p>Interact with AetherTwin's Generative AI to inspect CMDB assets, check live telemetry status, and retrieve safety procedures.</p>
+        </div>
+
+        <div class="chat-workspace-container">
+          <!-- Left Panel: Suggestions & Quick Commands -->
+          <div class="chat-sidebar-suggestions">
+            <h4>Quick Queries</h4>
+            <p class="suggestions-intro">Select a quick-action query below to test the assistant's context-aware intelligence:</p>
+            <div class="suggestion-chips-grid">
+              <button class="suggestion-chip" (click)="applyChatQuery('Show current telemetry and system health status')">
+                📊 Check Live Telemetry
+              </button>
+              <button class="suggestion-chip" (click)="applyChatQuery('What is the serial number and model of Pump P-101?')">
+                🗄️ Inspect Pump P-101 Specs
+              </button>
+              <button class="suggestion-chip" (click)="applyChatQuery('How do I mitigate pump cavitation?')">
+                🚨 Troubleshoot Cavitation
+              </button>
+              <button class="suggestion-chip" (click)="applyChatQuery('What is the recommended procedure for a pipeline leak?')">
+                🛠️ Pipeline Leak Guidelines
+              </button>
+              <button class="suggestion-chip" (click)="applyChatQuery('What DTDL models are defined in this project?')">
+                🌐 View DTDL Models Details
+              </button>
+            </div>
+            
+            <div class="assistant-status-box glass-card border-glow-cyan" style="margin-top: 2rem; padding: 1rem; border-radius: 6px;">
+              <h5>Safety Copilot Status</h5>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                <span class="status-indicator online" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
+                <span class="font-mono" style="font-size: 0.75rem; color: #10b981;">CONNECTED & READY</span>
+              </div>
+              <p style="font-size: 0.7rem; color: var(--color-text-muted); margin-top: 0.5rem; line-height: 1.3;">
+                This assistant utilizes the OpenAI API to dynamically evaluate simulation registers and CMDB assets.
+              </p>
+            </div>
+          </div>
+
+          <!-- Right Panel: Main Chat Interface -->
+          <div class="chat-main-area glass-card">
+            <div class="chat-messages-scroll" style="flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+              @for (msg of chatMessages(); track $index) {
+                <div class="chat-bubble-wrapper" [class.user]="msg.sender === 'user'" style="display: flex; gap: 0.8rem; align-items: flex-start; max-width: 85%;">
+                  <div class="avatar" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.3); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: var(--primary); flex-shrink: 0;">
+                    {{ msg.sender === 'user' ? 'OP' : 'AI' }}
+                  </div>
+                  <div class="chat-bubble-content-box" style="flex: 1;">
+                    <div class="bubble-header font-mono" style="font-size: 0.65rem; color: var(--color-text-muted); margin-bottom: 0.2rem;">
+                      {{ msg.sender === 'user' ? 'Operator Console' : 'AetherTwin Safety Copilot' }}
+                    </div>
+                    <div class="bubble-body" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 0.8rem 1rem; border-radius: 8px; color: #e2e8f0; font-size: 0.85rem; line-height: 1.5; word-break: break-word;" [innerHTML]="formatChatMessage(msg.text)">
+                    </div>
+                  </div>
+                </div>
+              }
+              @if (isChatLoading()) {
+                <div class="chat-bubble-wrapper loading-ai" style="display: flex; gap: 0.8rem; align-items: flex-start; max-width: 85%;">
+                  <div class="avatar" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #a855f7; flex-shrink: 0;">
+                    AI
+                  </div>
+                  <div class="chat-bubble-content-box" style="flex: 1;">
+                    <div class="bubble-header font-mono" style="font-size: 0.65rem; color: var(--color-text-muted); margin-bottom: 0.2rem;">
+                      AetherTwin Safety Copilot
+                    </div>
+                    <div class="bubble-body loading-bubble" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 0.8rem 1rem; border-radius: 8px; display: flex; gap: 4px; align-items: center; width: fit-content;">
+                      <span class="chat-dot"></span>
+                      <span class="chat-dot"></span>
+                      <span class="chat-dot"></span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Chat Input Box -->
+            <div class="chat-input-bar" style="display: flex; gap: 0.5rem; padding: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.05); background: rgba(0, 0, 0, 0.2);">
+              <input type="text" [(ngModel)]="chatQuery" placeholder="Ask a question about telemetry, CMDB assets, or safety mitigations..." (keyup.enter)="sendChatMessage()" style="flex: 1; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 4px; padding: 0.65rem 1rem; color: #fff; font-size: 0.85rem; outline: none;" />
+              <button class="send-btn" (click)="sendChatMessage()" [disabled]="!chatQuery.trim() || isChatLoading()" style="background: var(--primary); color: #000; border: none; font-weight: 700; padding: 0 1.2rem; border-radius: 4px; cursor: pointer; transition: all 0.2s;" [style.opacity]="chatQuery.trim() && !isChatLoading() ? '1' : '0.5'">
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     }
 
