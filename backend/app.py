@@ -305,15 +305,18 @@ def acknowledge_alarm():
 
 @app.post("/api/auth/login")
 def login(creds: LoginRequest):
-    username = creds.username.lower().strip()
-    password = creds.password
+    username = creds.username.lower().strip() if creds.username else ""
+    password = creds.password.strip() if creds.password else ""
+    
+    env_username = os.environ.get("DEVOPS_USERNAME", "goh0972.hyd016@hackathonindia.net").lower().strip()
+    env_password = os.environ.get("DEVOPS_PASSWORD", "HYD@40*065").strip()
     
     # Lead Engineer Credentials
-    if username == "goh0972.hyd016@hackathonindia.net" and password == "HYD@40*065":
+    if username == env_username and password == env_password:
         return {
             "status": "SUCCESS",
             "role": "ENGINEER",
-            "username": "goh0972.hyd016@hackathonindia.net",
+            "username": env_username,
             "name": "Lead Control Engineer"
         }
     # Backup Engineer Credentials
