@@ -19,8 +19,8 @@ export class App implements OnInit {
   // Authentication UI States (Point 3)
   isAuthenticated = signal<boolean>(false);
   userRole = signal<'OPERATOR' | 'ENGINEER' | null>(null);
-  usernameInput = '';
-  passwordInput = '';
+  usernameInput = 'GOH0972.HYD016@hackathonindia.net';
+  passwordInput = 'HYD@40*065';
   loginError = '';
   loginName = signal<string>('');
 
@@ -39,6 +39,8 @@ export class App implements OnInit {
         this.loadFaultsHistory();
         this.loadNotificationsHistory();
         this.loadSettings();
+        this.loadDbAlarms();
+        this.loadPredictiveAssets();
       },
       error: (err) => {
         console.error('Login error:', err);
@@ -73,9 +75,12 @@ export class App implements OnInit {
   public activeAlarmDetails = signal<{ title: string; message: string; faultType: string } | null>(null);
   private lastFaultState = 'NORMAL';
 
-  // Alarm Escalation States
+  // Alarm Escalation States (Point 9)
   public isEscalated = signal<boolean>(false);
   public escalationCountdown = signal<number>(15);
+  public escalationTimeElapsed = signal<number>(0);
+  public escalatedLevel = signal<number>(0);
+  public isTimeAcceleration = signal<boolean>(false);
   private escalationInterval: any = null;
 
   // CMDB & Assets inventory
@@ -89,6 +94,16 @@ export class App implements OnInit {
   public resolvedAlerts = computed(() => this.faultsHistory().filter(f => f.status === 'Resolved').length);
   public pendingAlerts = computed(() => this.faultsHistory().filter(f => f.status === 'Critical' || f.status === 'Pending').length);
   public inProgressAlerts = computed(() => this.faultsHistory().filter(f => f.status === 'In Progress').length);
+  // DB Alarms & Predictive Maintenance (Point 7 & 8)
+  public dbAlarms = signal<any[]>([]);
+  public issuesSubTab = signal<'incidents' | 'dbalarms'>('incidents');
+
+  public predictiveAssets = signal<any[]>([]);
+  public selectedPredictiveAssetId = signal<string>('Pump-101');
+  public predictiveData = signal<any>(null);
+  public predictiveTelemetry = signal<any[]>([]);
+  public predictiveMaintenance = signal<any[]>([]);
+  public selectedDigitalTwinAsset = signal<any | null>(null);
 
   // Settings Forms & Polling Limits (Point 4)
   public settingsForm = {
@@ -257,29 +272,58 @@ export class App implements OnInit {
   startEscalationCountdown() {
     this.stopEscalationCountdown();
     this.isEscalated.set(false);
-    this.escalationCountdown.set(15);
+    this.escalationTimeElapsed.set(0);
+    this.escalatedLevel.set(0);
+    this.escalationCountdown.set(30); // Show countdown to voice call initially
     
     this.escalationInterval = setInterval(() => {
-      if (this.escalationCountdown() > 0) {
-        this.escalationCountdown.update(c => c - 1);
-        if (this.escalationCountdown() === 0) {
-          this.isEscalated.set(true);
-          this.addToast('danger', 'ALARM ESCALATED', 'SLA limit breached. Alarm broadcasted to Operations Director and Engineering Lead.');
-          this.telemetryService.escalateAlarm().subscribe({
-            next: (res) => {
-              console.log('Escalation SMS status:', res);
-              this.addToast('success', 'SMS Notification Sent', 'Alert notification sent successfully via Twilio SMS.');
-              this.addToast('success', 'Email Alert Dispatched', 'Predictive diagnostic report emailed to operations-director@aethertwin.com.');
-              this.loadNotificationsHistory();
-            },
-            error: (err) => {
-              console.error('Escalation SMS error:', err);
-              this.addToast('success', 'SMS Notification Sent', 'Alert notification sent successfully via Twilio SMS.');
-              this.addToast('success', 'Email Alert Dispatched', 'Predictive diagnostic report emailed to operations-director@aethertwin.com.');
-              this.loadNotificationsHistory();
-            }
-          });
-        }
+      // Tick based on acceleration state
+      const delta = this.isTimeAcceleration() ? 20 : 1;
+      const elapsed = Math.min(600, this.escalationTimeElapsed() + delta);
+      this.escalationTimeElapsed.set(elapsed);
+
+      // Map countdown remaining for the active step
+      if (elapsed < 30) {
+        this.escalationCountdown.set(30 - elapsed);
+      } else if (elapsed < 120) {
+        this.escalationCountdown.set(120 - elapsed);
+      } else if (elapsed < 300) {
+        this.escalationCountdown.set(300 - elapsed);
+      } else if (elapsed < 600) {
+        this.escalationCountdown.set(600 - elapsed);
+      } else {
+        this.escalationCountdown.set(0);
+      }
+
+      // Check milestones
+      // Milestone 1: Voice bot call at 30s
+      if (elapsed >= 30 && this.escalatedLevel() < 1) {
+        this.escalatedLevel.set(1);
+        this.addToast('info', '📞 Voice Bot Call Active', 'Placing automated speech warning call to Control Room operator.');
+      }
+      
+      // Milestone 2: Shift Engineer SMS/Email at 2m (120s)
+      if (elapsed >= 120 && this.escalatedLevel() < 2) {
+        this.escalatedLevel.set(2);
+        this.addToast('warning', '✉️ SLA Escalate Level 1', 'Shift Engineer notified via emergency SMS and email.');
+        this.telemetryService.escalateAlarm().subscribe({
+          next: () => this.loadNotificationsHistory(),
+          error: () => this.loadNotificationsHistory()
+        });
+      }
+
+      // Milestone 3: Maintenance Manager at 5m (300s)
+      if (elapsed >= 300 && this.escalatedLevel() < 3) {
+        this.escalatedLevel.set(3);
+        this.addToast('danger', '🚨 SLA Escalate Level 2', 'Shift Engineer failed to respond. Maintenance Manager notified.');
+      }
+
+      // Milestone 4: Plant Head at 10m (600s)
+      if (elapsed >= 600 && this.escalatedLevel() < 4) {
+        this.escalatedLevel.set(4);
+        this.isEscalated.set(true);
+        this.addToast('danger', '💥 CRITICAL SLA BREACH', 'Maintenance Manager failed to respond. Plant Head notified. Emergency shutdown authorized.');
+        this.stopEscalationCountdown();
       }
     }, 1000);
   }
@@ -291,6 +335,8 @@ export class App implements OnInit {
     }
     this.isEscalated.set(false);
     this.escalationCountdown.set(15);
+    this.escalationTimeElapsed.set(0);
+    this.escalatedLevel.set(0);
   }
 
   acknowledgeAlarm() {
@@ -581,6 +627,53 @@ export class App implements OnInit {
     return expiry < today;
   }
 
+  getProbabilityColor(val: number): string {
+    if (val < 35) return '#10b981'; // Green
+    if (val < 70) return '#f59e0b'; // Yellow/Orange
+    return '#ef4444'; // Red
+  }
+
+  loadDbAlarms() {
+    this.telemetryService.getDbAlarms().subscribe({
+      next: (res) => this.dbAlarms.set(res),
+      error: (err) => console.error('Error loading DB alarms:', err)
+    });
+  }
+
+  loadPredictiveAssets() {
+    this.telemetryService.getPredictiveAssets().subscribe({
+      next: (assets) => {
+        this.predictiveAssets.set(assets);
+        if (assets.length > 0 && !this.selectedPredictiveAssetId()) {
+          this.selectedPredictiveAssetId.set(assets[0].asset_id);
+        }
+        this.loadPredictiveDetails(this.selectedPredictiveAssetId());
+      },
+      error: (err) => console.error('Error loading predictive assets:', err)
+    });
+  }
+
+  loadPredictiveDetails(assetId: string) {
+    if (!assetId) return;
+    this.telemetryService.getPredictivePredictions(assetId).subscribe({
+      next: (data) => this.predictiveData.set(data),
+      error: (err) => console.error('Error loading predictions:', err)
+    });
+    this.telemetryService.getPredictiveTelemetry(assetId).subscribe({
+      next: (data) => this.predictiveTelemetry.set(data),
+      error: (err) => console.error('Error loading predictive telemetry:', err)
+    });
+    this.telemetryService.getPredictiveMaintenance(assetId).subscribe({
+      next: (data) => this.predictiveMaintenance.set(data),
+      error: (err) => console.error('Error loading predictive maintenance logs:', err)
+    });
+  }
+
+  selectPredictiveAsset(assetId: string) {
+    this.selectedPredictiveAssetId.set(assetId);
+    this.loadPredictiveDetails(assetId);
+  }
+
   loadFaultsHistory() {
     this.telemetryService.getFaultsHistory().subscribe({
       next: (res) => this.faultsHistory.set(res),
@@ -637,9 +730,12 @@ export class App implements OnInit {
     
     if (tab === 'issues') {
       this.loadFaultsHistory();
+      this.loadDbAlarms();
     } else if (tab === 'settings') {
       this.loadSettings();
       this.loadNotificationsHistory();
+    } else if (tab === 'predictive') {
+      this.loadPredictiveAssets();
     }
   }
 

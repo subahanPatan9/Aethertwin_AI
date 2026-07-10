@@ -260,4 +260,24 @@ export class TelemetryService {
   saveSettings(settings: SettingsData) {
     return this.http.post<any>(`${this.apiUrl}/api/settings`, settings);
   }
+
+  getDbAlarms() {
+    return this.http.get<any[]>(`${this.apiUrl}/api/db/alarms`);
+  }
+
+  getPredictiveAssets() {
+    return this.http.get<any[]>(`${this.apiUrl}/api/predictive/assets`);
+  }
+
+  getPredictivePredictions(assetId: string) {
+    return this.http.get<any>(`${this.apiUrl}/api/predictive/predictions/${assetId}`);
+  }
+
+  getPredictiveTelemetry(assetId: string) {
+    return this.http.get<any[]>(`${this.apiUrl}/api/predictive/telemetry/${assetId}`);
+  }
+
+  getPredictiveMaintenance(assetId: string) {
+    return this.http.get<any[]>(`${this.apiUrl}/api/predictive/maintenance/${assetId}`);
+  }
 }
