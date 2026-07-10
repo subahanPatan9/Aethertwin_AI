@@ -656,7 +656,13 @@ export class App implements OnInit {
   loadPredictiveDetails(assetId: string) {
     if (!assetId) return;
     this.telemetryService.getPredictivePredictions(assetId).subscribe({
-      next: (data) => this.predictiveData.set(data),
+      next: (data) => {
+        this.predictiveData.set(data);
+        const p30 = data?.failure_probabilities?.within_30_days;
+        if (p30 && p30 >= 70) {
+          this.addToast('danger', '🚨 Critical Bearing Degraded', `Vibration threshold limit breached on ${assetId}. Failure probability within 30 days is ${p30}%.`);
+        }
+      },
       error: (err) => console.error('Error loading predictions:', err)
     });
     this.telemetryService.getPredictiveTelemetry(assetId).subscribe({

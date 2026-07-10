@@ -1284,33 +1284,33 @@
                   <!-- 7 Days Gauge -->
                   <div style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); position: relative;">
                     <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-muted); margin-bottom: 0.5rem;">Within 7 Days</div>
-                    <div class="font-mono" style="font-size: 1.8rem; font-weight: 800;" [style.color]="getProbabilityColor(predictiveData()?.failure_probabilities?.within_7_days || 18)">
-                      {{ predictiveData()?.failure_probabilities?.within_7_days || 18 }}%
+                    <div class="font-mono" style="font-size: 1.8rem; font-weight: 800;" [style.color]="getProbabilityColor(predictiveData()?.failure_probabilities?.within_7_days ?? 18)">
+                      {{ predictiveData()?.failure_probabilities?.within_7_days ?? 18 }}%
                     </div>
                     <div style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 0.8rem; overflow: hidden;">
-                      <div [style.width.%]="predictiveData()?.failure_probabilities?.within_7_days || 18" [style.background]="getProbabilityColor(predictiveData()?.failure_probabilities?.within_7_days || 18)" [style.box-shadow]="'0 0 8px ' + getProbabilityColor(predictiveData()?.failure_probabilities?.within_7_days || 18)" style="height: 100%;"></div>
+                      <div [style.width.%]="predictiveData()?.failure_probabilities?.within_7_days ?? 18" [style.background]="getProbabilityColor(predictiveData()?.failure_probabilities?.within_7_days ?? 18)" [style.box-shadow]="'0 0 8px ' + getProbabilityColor(predictiveData()?.failure_probabilities?.within_7_days ?? 18)" style="height: 100%;"></div>
                     </div>
                   </div>
 
                   <!-- 14 Days Gauge -->
                   <div style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); position: relative;">
                     <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-muted); margin-bottom: 0.5rem;">Within 14 Days</div>
-                    <div class="font-mono" style="font-size: 1.8rem; font-weight: 800;" [style.color]="getProbabilityColor(predictiveData()?.failure_probabilities?.within_14_days || 41)">
-                      {{ predictiveData()?.failure_probabilities?.within_14_days || 41 }}%
+                    <div class="font-mono" style="font-size: 1.8rem; font-weight: 800;" [style.color]="getProbabilityColor(predictiveData()?.failure_probabilities?.within_14_days ?? 41)">
+                      {{ predictiveData()?.failure_probabilities?.within_14_days ?? 41 }}%
                     </div>
                     <div style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 0.8rem; overflow: hidden;">
-                      <div [style.width.%]="predictiveData()?.failure_probabilities?.within_14_days || 41" [style.background]="getProbabilityColor(predictiveData()?.failure_probabilities?.within_14_days || 41)" [style.box-shadow]="'0 0 8px ' + getProbabilityColor(predictiveData()?.failure_probabilities?.within_14_days || 41)" style="height: 100%;"></div>
+                      <div [style.width.%]="predictiveData()?.failure_probabilities?.within_14_days ?? 41" [style.background]="getProbabilityColor(predictiveData()?.failure_probabilities?.within_14_days ?? 41)" [style.box-shadow]="'0 0 8px ' + getProbabilityColor(predictiveData()?.failure_probabilities?.within_14_days ?? 41)" style="height: 100%;"></div>
                     </div>
                   </div>
 
                   <!-- 30 Days Gauge -->
                   <div style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); position: relative;">
                     <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-muted); margin-bottom: 0.5rem;">Within 30 Days</div>
-                    <div class="font-mono" style="font-size: 1.8rem; font-weight: 800;" [style.color]="getProbabilityColor(predictiveData()?.failure_probabilities?.within_30_days || 79)">
-                      {{ predictiveData()?.failure_probabilities?.within_30_days || 79 }}%
+                    <div class="font-mono" style="font-size: 1.8rem; font-weight: 800;" [style.color]="getProbabilityColor(predictiveData()?.failure_probabilities?.within_30_days ?? 79)">
+                      {{ predictiveData()?.failure_probabilities?.within_30_days ?? 79 }}%
                     </div>
                     <div style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 0.8rem; overflow: hidden;">
-                      <div [style.width.%]="predictiveData()?.failure_probabilities?.within_30_days || 79" [style.background]="getProbabilityColor(predictiveData()?.failure_probabilities?.within_30_days || 79)" [style.box-shadow]="'0 0 8px ' + getProbabilityColor(predictiveData()?.failure_probabilities?.within_30_days || 79)" style="height: 100%;"></div>
+                      <div [style.width.%]="predictiveData()?.failure_probabilities?.within_30_days ?? 79" [style.background]="getProbabilityColor(predictiveData()?.failure_probabilities?.within_30_days ?? 79)" [style.box-shadow]="'0 0 8px ' + getProbabilityColor(predictiveData()?.failure_probabilities?.within_30_days ?? 79)" style="height: 100%;"></div>
                     </div>
                   </div>
                 </div>
