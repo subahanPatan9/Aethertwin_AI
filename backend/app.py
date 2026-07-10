@@ -378,6 +378,10 @@ def get_predictive_assets():
     assets.extend(bearings)
     return assets
 
+@app.get("/api/predictive/high-risk")
+def get_predictive_high_risk():
+    return predictive_model.get_high_risk_assets()
+
 @app.get("/api/predictive/predictions/{asset_id}")
 def get_predictive_predictions(asset_id: str):
     live_fault = simulator.active_fault

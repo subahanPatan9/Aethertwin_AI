@@ -162,6 +162,44 @@ class PredictiveModel:
             "message": "Bearing vibration increasing. Maintenance can be scheduled before failure."
         }
 
+    def get_high_risk_assets(self):
+        if not self.use_mongo:
+            return []
+        try:
+            high_risk = []
+            # Fetch all 100 bearing assets
+            assets = self.get_bearing_assets()
+            for asset in assets:
+                asset_id = asset["asset_id"]
+                skip_offset = 0
+                try:
+                    num_part = int(asset_id.split("-")[1])
+                    skip_offset = (num_part * 7) % 95
+                except Exception:
+                    pass
+                
+                # Query the prediction record at its offset day
+                pred_doc = list(self.db.ml_predictions.find(
+                    {"asset_id": asset_id},
+                    {"_id": 0}
+                ).sort("timestamp", 1).skip(skip_offset).limit(1))
+                
+                if pred_doc:
+                    pred = pred_doc[0]
+                    p_30 = pred.get("failure_probabilities", {}).get("within_30_days", 0)
+                    if p_30 > 0.70:
+                        high_risk.append({
+                            "asset_id": asset_id,
+                            "model_number": asset.get("model_number", "N/A"),
+                            "vibration_status": pred.get("current_vibration_status", "NORMAL"),
+                            "probability_30d": int(p_30 * 100),
+                            "recommended_action": pred.get("recommended_action", "")
+                        })
+            return high_risk
+        except Exception as e:
+            print(f"Error fetching high-risk assets: {e}")
+            return []
+
     def get_telemetry_history(self, asset_id):
         if asset_id == "Pump-101" or asset_id == "Pump-P101":
             return []
