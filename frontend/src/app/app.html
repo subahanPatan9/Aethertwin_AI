@@ -1315,12 +1315,14 @@
                   </div>
                 </div>
 
-                <div class="prediction-alert-banner" style="margin-top: 1.25rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); padding: 0.8rem 1.25rem; border-radius: 6px; display: flex; align-items: center; gap: 0.8rem;">
-                  <span style="font-size: 1.3rem;">⚠️</span>
-                  <span style="font-size: 0.85rem; font-weight: 700; color: #ff6b6b; font-family: monospace;">
-                    {{ predictiveData()?.message }}
-                  </span>
-                </div>
+                @if (predictiveData()?.status !== 'NORMAL') {
+                  <div class="prediction-alert-banner" style="margin-top: 1.25rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); padding: 0.8rem 1.25rem; border-radius: 6px; display: flex; align-items: center; gap: 0.8rem;">
+                    <span style="font-size: 1.3rem;">⚠️</span>
+                    <span style="font-size: 0.85rem; font-weight: 700; color: #ff6b6b; font-family: monospace;">
+                      {{ predictiveData()?.message }}
+                    </span>
+                  </div>
+                }
               }
             </div>
 
