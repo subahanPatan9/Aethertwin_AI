@@ -1216,13 +1216,20 @@
             <h2>ML Predictive Maintenance & Vibration Diagnostics</h2>
             <p>Predictive anomaly models trained on MongoDB time-series telemetry to calculate breakdown probabilities, likely failure causes, and recommended maintenance interventions.</p>
           </div>
-          <div class="asset-dropdown-box" style="display: flex; align-items: center; gap: 0.8rem; background: rgba(17, 24, 39, 0.6); padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid rgba(6, 182, 212, 0.25);">
-            <label style="font-weight: 700; color: var(--cyan); font-size: 0.85rem; text-transform: uppercase;">Select Asset:</label>
-            <select [ngModel]="selectedPredictiveAssetId()" (ngModelChange)="selectPredictiveAsset($event)" style="background: rgb(13, 18, 30); color: var(--color-text); border: 1px solid rgba(255,255,255,0.12); padding: 0.35rem 0.75rem; border-radius: 4px; font-weight: 700; font-family: monospace; outline: none; cursor: pointer;">
-              @for (asset of predictiveAssets(); track asset.asset_id) {
-                <option [value]="asset.asset_id">{{ asset.asset_id }} ({{ asset.component_type }})</option>
-              }
-            </select>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <button class="glow-btn danger-btn animate-pulse-glow" (click)="auditHighRiskAssets()" style="padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 700; border-color: rgba(239, 68, 68, 0.4); display: flex; align-items: center; gap: 0.4rem; cursor: pointer; border-radius: 6px; background: rgba(239, 68, 68, 0.1); color: var(--danger);">
+              <span>⚠️</span>
+              <span>Audit High-Risk Bearings (>70%)</span>
+            </button>
+            
+            <div class="asset-dropdown-box" style="display: flex; align-items: center; gap: 0.8rem; background: rgba(17, 24, 39, 0.6); padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid rgba(6, 182, 212, 0.25);">
+              <label style="font-weight: 700; color: var(--cyan); font-size: 0.85rem; text-transform: uppercase;">Select Asset:</label>
+              <select [ngModel]="selectedPredictiveAssetId()" (ngModelChange)="selectPredictiveAsset($event)" style="background: rgb(13, 18, 30); color: var(--color-text); border: 1px solid rgba(255,255,255,0.12); padding: 0.35rem 0.75rem; border-radius: 4px; font-weight: 700; font-family: monospace; outline: none; cursor: pointer;">
+                @for (asset of predictiveAssets(); track asset.asset_id) {
+                  <option [value]="asset.asset_id">{{ asset.asset_id }} ({{ asset.component_type }})</option>
+                }
+              </select>
+            </div>
           </div>
         </div>
 
@@ -1326,39 +1333,6 @@
               }
             </div>
 
-            <!-- Vibration Trend Line Graph Card -->
-            @if (selectedPredictiveAssetId() !== 'Pump-101') {
-              <div class="glass-card" style="padding: 1.25rem;">
-                <h3 style="margin-bottom: 0.5rem;">📈 Time-Series Vibration Degradation (MongoDB)</h3>
-                <p style="font-size: 0.75rem; color: var(--color-text-muted); margin-bottom: 1.2rem;">Historical 20-day sensor log tracking acceleration RMS (g) showing machine wear signature.</p>
-                
-                <div style="background: rgba(8,10,18,0.4); border-radius: 6px; padding: 1rem; border: 1px solid rgba(255,255,255,0.05);">
-                  <div style="height: 120px; position: relative;">
-                    <!-- Simple Mock graph line utilizing SVG -->
-                    <svg viewBox="0 0 400 100" style="width: 100%; height: 100%;" preserveAspectRatio="none">
-                      <!-- Grid lines -->
-                      <line x1="0" y1="20" x2="400" y2="20" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
-                      <line x1="0" y1="50" x2="400" y2="50" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
-                      <line x1="0" y1="80" x2="400" y2="80" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
-                      
-                      <!-- Line path representing gradual increase -->
-                      <path d="M 0 85 Q 80 80, 160 70 T 320 40 T 400 20" fill="none" stroke="var(--danger)" stroke-width="2.5" />
-                      <!-- Dots at intervals -->
-                      <circle cx="0" cy="85" r="3.5" fill="var(--danger)" />
-                      <circle cx="100" cy="78" r="3.5" fill="var(--danger)" />
-                      <circle cx="200" cy="65" r="3.5" fill="var(--danger)" />
-                      <circle cx="300" cy="45" r="3.5" fill="var(--danger)" />
-                      <circle cx="400" cy="20" r="3.5" fill="var(--danger)" />
-                    </svg>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--color-text-muted); margin-top: 0.5rem; font-family: monospace;">
-                    <span>t-20 Days (0.8g)</span>
-                    <span>t-10 Days (1.5g)</span>
-                    <span>Current (2.8g RMS)</span>
-                  </div>
-                </div>
-              </div>
-            }
           </div>
 
           <!-- Right Column -->
@@ -2413,6 +2387,81 @@
         <div class="modal-footer" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.8rem; display: flex; justify-content: flex-end;">
           <button class="modal-action-btn secondary-btn" (click)="selectedDigitalTwinAsset.set(null)">
             Close Twin
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- High-Risk Bearings Audit Modal (Point 10) -->
+  @if (showHighRiskModal()) {
+    <div class="modal-overlay" (click)="showHighRiskModal.set(false)" style="z-index: 16000;">
+      <div class="glass-panel alarm-modal animate-modal-in" (click)="$event.stopPropagation()" style="width: 650px; max-width: 92vw; border-color: rgba(239, 68, 68, 0.45); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), var(--glow-red);">
+        
+        <!-- Header -->
+        <div class="modal-header" style="border-bottom: 1px solid rgba(239, 68, 68, 0.2); padding-bottom: 1rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 0.8rem;">
+            <span style="font-size: 1.8rem;">🚨</span>
+            <div>
+              <h2 style="color: var(--danger); text-shadow: var(--glow-red); font-size: 1.3rem; margin: 0; font-weight: 800;">High-Risk Bearing Assets Audit</h2>
+              <span class="font-mono text-muted" style="font-size: 0.7rem;">SLA Risk Threshold: >70% breakdown probability within 30 days</span>
+            </div>
+          </div>
+          <button (click)="showHighRiskModal.set(false)" style="background: none; border: none; color: var(--color-text-muted); font-size: 1.8rem; cursor: pointer; line-height: 1;">&times;</button>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-body" style="gap: 1.25rem; overflow-y: auto; max-height: 55vh; padding-right: 0.5rem; text-align: left;">
+          
+          @if (loadingHighRisk()) {
+            <div style="text-align: center; padding: 2rem;">
+              <div class="spinner" style="margin: 0 auto 1rem;"></div>
+              <p class="font-mono text-muted" style="font-size: 0.8rem;">Analyzing predictive models and ML datasets in database...</p>
+            </div>
+          } @else {
+            @if (highRiskBearings().length === 0) {
+              <div style="text-align: center; padding: 2rem; background: rgba(255,255,255,0.01); border-radius: 6px; border: 1px dashed rgba(255,255,255,0.05);">
+                <span style="font-size: 2rem; display: block; margin-bottom: 0.8rem;">✅</span>
+                <h4 style="color: var(--success); margin-bottom: 0.3rem;">All Systems Nominal</h4>
+                <p style="font-size: 0.8rem; color: var(--color-text-muted); margin: 0;">No bearing assets currently exceed the 70% failure probability limit.</p>
+              </div>
+            } @else {
+              <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-bottom: 0.8rem; line-height: 1.4;">
+                The following bearing assets have been flagged by the anomaly forecasting models. Immediate lubrication, grease overhaul, or replacement scheduling is recommended.
+              </p>
+              
+              <table class="cmdb-table" style="font-size: 0.8rem; width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr>
+                    <th>Asset ID</th>
+                    <th>Model Number</th>
+                    <th style="text-align: center;">30d Risk</th>
+                    <th>Recommended Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (brg of highRiskBearings(); track brg.asset_id) {
+                    <tr style="background: rgba(239, 68, 68, 0.03);">
+                      <td class="font-mono text-danger" style="font-weight: 700;">⚠️ {{ brg.asset_id }}</td>
+                      <td class="font-mono text-muted">{{ brg.model_number }}</td>
+                      <td class="font-mono text-center text-danger" style="font-weight: 800; font-size: 0.95rem;">
+                        {{ brg.probability_30d }}%
+                      </td>
+                      <td style="font-size: 0.75rem; color: var(--color-text-muted);">{{ brg.recommended_action }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          }
+          
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.8rem; display: flex; justify-content: flex-end;">
+          <button class="modal-action-btn secondary-btn" (click)="showHighRiskModal.set(false)">
+            Close Audit
           </button>
         </div>
 

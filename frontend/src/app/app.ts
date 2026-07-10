@@ -104,6 +104,9 @@ export class App implements OnInit {
   public predictiveTelemetry = signal<any[]>([]);
   public predictiveMaintenance = signal<any[]>([]);
   public selectedDigitalTwinAsset = signal<any | null>(null);
+  public showHighRiskModal = signal<boolean>(false);
+  public highRiskBearings = signal<any[]>([]);
+  public loadingHighRisk = signal<boolean>(false);
 
   // Settings Forms & Polling Limits (Point 4)
   public settingsForm = {
@@ -678,6 +681,21 @@ export class App implements OnInit {
   selectPredictiveAsset(assetId: string) {
     this.selectedPredictiveAssetId.set(assetId);
     this.loadPredictiveDetails(assetId);
+  }
+
+  auditHighRiskAssets() {
+    this.loadingHighRisk.set(true);
+    this.showHighRiskModal.set(true);
+    this.telemetryService.getHighRiskBearings().subscribe({
+      next: (res) => {
+        this.highRiskBearings.set(res);
+        this.loadingHighRisk.set(false);
+      },
+      error: (err) => {
+        console.error('Error fetching high risk bearings:', err);
+        this.loadingHighRisk.set(false);
+      }
+    });
   }
 
   loadFaultsHistory() {

@@ -280,4 +280,8 @@ export class TelemetryService {
   getPredictiveMaintenance(assetId: string) {
     return this.http.get<any[]>(`${this.apiUrl}/api/predictive/maintenance/${assetId}`);
   }
+
+  getHighRiskBearings() {
+    return this.http.get<any[]>(`${this.apiUrl}/api/predictive/high-risk`);
+  }
 }
