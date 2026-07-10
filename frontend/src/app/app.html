@@ -171,6 +171,13 @@
         <span>Analytics Hub</span>
       </button>
 
+      <button class="nav-btn" [class.active]="activeTab() === 'predictive'" (click)="switchTab('predictive')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+        <span>ML Predictions</span>
+      </button>
+
       <button class="nav-btn" [class.active]="activeTab() === 'architecture'" (click)="switchTab('architecture')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M4 7V4h16v3M4 15h16M4 17v3h16v-3M9 7h6v8H9z"/>
@@ -201,7 +208,7 @@
           <div class="user-avatar">{{ loginName().substring(0, 1) }}</div>
           <div class="user-details">
             <span class="user-name">{{ loginName() }}</span>
-            <span class="user-role badge" [class.badge-danger]="userRole() === 'ENGINEER'" [class.badge-success]="userRole() === 'OPERATOR'">
+            <span class="user-role" [class.role-engineer]="userRole() === 'ENGINEER'" [class.role-operator]="userRole() === 'OPERATOR'">
               {{ userRole() }}
             </span>
           </div>
@@ -905,14 +912,16 @@
 
     <!-- TAB 3: AZURE TWIN & DTDL -->
     @if (activeTab() === 'dtdl') {
-      <div class="dtdl-grid">
-        <!-- DTDL Schema Viewer -->
-        <div class="glass-panel schema-card">
+      <!-- Top Layout: DTDL and Topology/Work Order side-by-side -->
+      <div class="dtdl-top-grid" style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 1.5rem; margin-bottom: 1.5rem; width: 100%;">
+        
+        <!-- Left Side: DTDL Schema Viewer -->
+        <div class="glass-panel schema-card" style="display: flex; flex-direction: column; min-height: 0;">
           <div class="card-header">
             <h3>Digital Twins Definition Language (DTDL)</h3>
             <span class="lang-tag font-mono">JSON-LD</span>
           </div>
-          <div class="schema-code-box font-mono">
+          <div class="schema-code-box font-mono" style="height: 450px; overflow-y: auto; background: #05070f; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; font-size: 0.8rem; color: #38bdf8; line-height: 1.4;">
             @if (loadingDtdl()) {
               <p>Fetching models...</p>
             } @else {
@@ -921,123 +930,58 @@
           </div>
         </div>
 
-        <!-- Azure Topology Graph and Work Order Dispatcher -->
-        <div class="azure-actions-column">
+        <!-- Right Side: Topology & Azure DevOps -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
           <!-- Visual Topology -->
-          <div class="glass-panel topology-card">
+          <div class="glass-panel topology-card" style="padding: 1.25rem;">
             <h3>Digital Twin Relationship Graph</h3>
-            
-            <div class="graph-box">
-              <svg viewBox="0 0 400 240" class="topology-svg">
+            <div class="graph-box" style="margin-top: 0.5rem;">
+              <svg viewBox="0 0 400 220" class="topology-svg">
                 <!-- Graph Lines -->
-                <path d="M 200 60 L 80 150 M 200 60 L 200 150 M 200 60 L 320 150" stroke="#64748b" stroke-width="2" stroke-dasharray="4,4"/>
+                <path d="M 200 50 L 80 140 M 200 50 L 200 140 M 200 50 L 320 140" stroke="#64748b" stroke-width="2" stroke-dasharray="4,4"/>
                 
                 <!-- Root Plant Node -->
-                <g transform="translate(200, 60)">
-                  <rect x="-60" y="-20" width="120" height="40" rx="6" fill="#0f172a" stroke="var(--primary)" stroke-width="2"/>
-                  <text x="0" y="5" fill="var(--color-text)" font-size="10" text-anchor="middle" font-weight="600">WaterTreatmentPlant</text>
+                <g transform="translate(200, 50)">
+                  <rect x="-60" y="-18" width="120" height="36" rx="6" fill="#0f172a" stroke="var(--primary)" stroke-width="2"/>
+                  <text x="0" y="4" fill="var(--color-text)" font-size="10" text-anchor="middle" font-weight="600">WaterTreatmentPlant</text>
                 </g>
 
                 <!-- Sub-node 1 (StorageTank) -->
-                <g transform="translate(80, 150)">
+                <g transform="translate(80, 140)">
                   <rect x="-50" y="-15" width="100" height="30" rx="4" fill="#1e293b" stroke="#64748b" stroke-width="1.5"/>
                   <text x="0" y="4" fill="var(--color-text)" font-size="9" text-anchor="middle">hasSourceTank</text>
-                  <text x="0" y="25" fill="var(--color-text-muted)" font-size="8" text-anchor="middle">StorageTank</text>
+                  <text x="0" y="24" fill="var(--color-text-muted)" font-size="8" text-anchor="middle">StorageTank</text>
                 </g>
 
                 <!-- Sub-node 2 (BoosterPump) -->
-                <g transform="translate(200, 150)">
+                <g transform="translate(200, 140)">
                   <rect x="-50" y="-15" width="100" height="30" rx="4" fill="#1e293b" stroke="#64748b" stroke-width="1.5"/>
                   <text x="0" y="4" fill="var(--color-text)" font-size="9" text-anchor="middle">hasBoosterPump</text>
-                  <text x="0" y="25" fill="var(--color-text-muted)" font-size="8" text-anchor="middle">BoosterPump</text>
+                  <text x="0" y="24" fill="var(--color-text-muted)" font-size="8" text-anchor="middle">BoosterPump</text>
                 </g>
 
                 <!-- Sub-node 3 (SandFilter) -->
-                <g transform="translate(320, 150)">
+                <g transform="translate(320, 140)">
                   <rect x="-50" y="-15" width="100" height="30" rx="4" fill="#1e293b" stroke="#64748b" stroke-width="1.5"/>
                   <text x="0" y="4" fill="var(--color-text)" font-size="9" text-anchor="middle">hasSandFilter</text>
-                  <text x="0" y="25" fill="var(--color-text-muted)" font-size="8" text-anchor="middle">SandFilter</text>
+                  <text x="0" y="24" fill="var(--color-text-muted)" font-size="8" text-anchor="middle">SandFilter</text>
                 </g>
               </svg>
             </div>
           </div>
 
-          <!-- CMDB Configuration Management Database (Asset Inventory) -->
-          <div class="glass-panel cmdb-card">
-            <div class="card-header border-glow-cyan">
-              <h3>Configuration Management Database (CMDB)</h3>
-              <span class="status-indicator font-mono">Synced</span>
-            </div>
-            <p class="panel-desc">Physical asset parameters, serial numbers, and vendor procurement links.</p>
-            
-            <div class="cmdb-table-container">
-              <table class="cmdb-table">
-                <thead>
-                  <tr>
-                    <th>Tag</th>
-                    <th>Asset Name</th>
-                    <th>Model</th>
-                    <th>Serial Number</th>
-                    <th>Vendor</th>
-                    <th>Warranty Expiry</th>
-                    <th>Calibration Due</th>
-                    <th>AMC Status</th>
-                    <th>Design Capacity</th>
-                    <th>OEM Link</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (asset of assets(); track asset.id) {
-                    <tr>
-                      <td class="font-mono text-cyan">{{ asset.id }}</td>
-                      <td>{{ asset.name }}</td>
-                      <td>{{ asset.model }}</td>
-                      <td class="font-mono text-muted">{{ asset.serial_number }}</td>
-                      <td>{{ asset.vendor }}</td>
-                      <td>
-                        <span class="scada-badge" [class.badge-danger]="isWarrantyExpired(asset.warranty_expiry)" [class.badge-success]="!isWarrantyExpired(asset.warranty_expiry)">
-                          {{ asset.warranty_expiry }}
-                        </span>
-                      </td>
-                      <td>
-                        <span class="scada-badge animate-flash-urgent" [class.badge-danger]="isCalibrationOverdue(asset.calibration_due)" [class.badge-success]="!isCalibrationOverdue(asset.calibration_due)">
-                          {{ asset.calibration_due }}
-                        </span>
-                      </td>
-                      <td>
-                        <span class="scada-badge" [class.badge-success]="asset.amc_active" [class.badge-danger]="!asset.amc_active">
-                          {{ asset.amc_active ? 'ACTIVE' : 'INACTIVE' }}
-                        </span>
-                      </td>
-                      <td class="font-mono text-muted text-center">
-                        {{ asset.max_design_capacity }}
-                      </td>
-                      <td>
-                        <a [href]="asset.replacement_url" target="_blank" class="oem-link">
-                          Procure ↗
-                        </a>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          </div>
-
           <!-- Azure DevOps Work Ticket Generation -->
-          <div class="glass-panel work-order-card">
+          <div class="glass-panel work-order-card" style="padding: 1.25rem;">
             <h3>Azure DevOps / Dynamics 365 Integration</h3>
-            <p class="panel-desc">Dispatch a physical maintenance ticket directly into Azure DevOps boards from AI diagnostics.</p>
-            
-            <div class="wo-form">
-              <div class="form-row">
-                <div class="field-group half">
-                  <label>Target Asset ID</label>
-                  <input type="text" [(ngModel)]="woComponent"/>
+            <div class="wo-form" style="margin-top: 0.5rem;">
+              <div class="form-row" style="display: flex; gap: 1rem; margin-bottom: 0.8rem;">
+                <div class="field-group half" style="flex: 1;">
+                  <label style="font-size: 0.75rem; color: var(--color-text-muted); display: block; margin-bottom: 0.2rem;">Target Asset ID</label>
+                  <input type="text" [(ngModel)]="woComponent" style="width: 100%; background: #0b0f19; border: 1px solid var(--border-color); color: #fff; padding: 0.35rem 0.5rem; border-radius: 4px;"/>
                 </div>
-                <div class="field-group half">
-                  <label>Severity Priority</label>
-                  <select [(ngModel)]="woPriority">
+                <div class="field-group half" style="flex: 1;">
+                  <label style="font-size: 0.75rem; color: var(--color-text-muted); display: block; margin-bottom: 0.2rem;">Severity Priority</label>
+                  <select [(ngModel)]="woPriority" style="width: 100%; background: #0b0f19; border: 1px solid var(--border-color); color: #fff; padding: 0.35rem 0.5rem; border-radius: 4px;">
                     <option value="CRITICAL">Critical Interlock</option>
                     <option value="HIGH">High Priority</option>
                     <option value="MEDIUM">Medium / Warning</option>
@@ -1046,18 +990,18 @@
                 </div>
               </div>
 
-              <div class="field-group">
-                <label>Incident Details Description</label>
-                <textarea rows="3" [(ngModel)]="woDescription"></textarea>
+              <div class="field-group" style="margin-bottom: 0.8rem;">
+                <label style="font-size: 0.75rem; color: var(--color-text-muted); display: block; margin-bottom: 0.2rem;">Incident Details Description</label>
+                <textarea rows="2" [(ngModel)]="woDescription" style="width: 100%; background: #0b0f19; border: 1px solid var(--border-color); color: #fff; padding: 0.35rem 0.5rem; border-radius: 4px; resize: none;"></textarea>
               </div>
 
-              <button class="glow-btn wo-btn" (click)="dispatchWorkOrder()" [disabled]="creatingWorkOrder()">
+              <button class="glow-btn wo-btn" (click)="dispatchWorkOrder()" [disabled]="creatingWorkOrder()" style="width: 100%; padding: 0.5rem 1rem; font-weight: 700;">
                 {{ creatingWorkOrder() ? 'Syncing to Azure...' : 'Dispatch Maintenance via Azure DevOps' }}
               </button>
             </div>
 
             @if (createdWorkOrder()) {
-              <div class="glass-card success-ticket border-glow-success">
+              <div class="glass-card success-ticket border-glow-success" style="margin-top: 1rem; padding: 0.8rem;">
                 <div class="ticket-header">
                   <span class="status-badge green">CONNECTED</span>
                   <h4>Work Order Created</h4>
@@ -1068,6 +1012,71 @@
               </div>
             }
           </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Layout: Full Width CMDB Configuration Management Database (Asset Inventory) -->
+      <div class="glass-panel cmdb-card animate-fade-in" style="width: 100%;">
+        <div class="card-header border-glow-cyan" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(6, 182, 212, 0.2); padding-bottom: 0.8rem; margin-bottom: 1rem;">
+          <div>
+            <h3 style="color: var(--cyan); text-shadow: 0 0 10px rgba(6, 182, 212, 0.4); margin: 0;">Configuration Management Database (CMDB)</h3>
+            <p style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.2rem; margin-bottom: 0;">Physical asset parameters, serial numbers, drawings, manuals, spares, and vendor procurement contacts.</p>
+          </div>
+          <span class="status-indicator font-mono" style="color: var(--success); font-weight: 700; background: rgba(16,185,129,0.15); padding: 0.2rem 0.6rem; border-radius: 4px; border: 1px solid rgba(16,185,129,0.3);">Synced</span>
+        </div>
+        
+        <div class="cmdb-table-container">
+          <table class="cmdb-table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr>
+                <th>Tag</th>
+                <th>Asset Name</th>
+                <th>Model</th>
+                <th>Serial Number</th>
+                <th>Vendor</th>
+                <th>Warranty Expiry</th>
+                <th>Calibration Due</th>
+                <th>AMC Status</th>
+                <th>Design Capacity</th>
+                <th>OEM Link</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (asset of assets(); track asset.id) {
+                <tr class="clickable-row" (click)="selectedDigitalTwinAsset.set(asset)" title="Click to view full Equipment Digital Twin details" style="cursor: pointer;">
+                  <td class="font-mono text-cyan">🔍 {{ asset.id }}</td>
+                  <td style="font-weight: 700;">{{ asset.name }}</td>
+                  <td>{{ asset.model }}</td>
+                  <td class="font-mono text-muted">{{ asset.serial_number }}</td>
+                  <td>{{ asset.vendor }}</td>
+                  <td>
+                    <span class="scada-badge" [class.badge-danger]="isWarrantyExpired(asset.warranty_expiry)" [class.badge-success]="!isWarrantyExpired(asset.warranty_expiry)">
+                      {{ asset.warranty_expiry }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="scada-badge animate-flash-urgent" [class.badge-danger]="isCalibrationOverdue(asset.calibration_due)" [class.badge-success]="!isCalibrationOverdue(asset.calibration_due)">
+                      {{ asset.calibration_due }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="scada-badge" [class.badge-success]="asset.amc_active" [class.badge-danger]="!asset.amc_active">
+                      {{ asset.amc_active ? 'ACTIVE' : 'INACTIVE' }}
+                    </span>
+                  </td>
+                  <td class="font-mono text-muted text-center">
+                    {{ asset.max_design_capacity }}
+                  </td>
+                  <td>
+                    <a [href]="asset.replacement_url" target="_blank" class="oem-link" (click)="$event.stopPropagation()">
+                      Procure ↗
+                    </a>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
         </div>
       </div>
     }
@@ -1199,6 +1208,248 @@
       </div>
     }
 
+    <!-- TAB 5.5: ML PREDICTIVE MAINTENANCE DASHBOARD (Point 7 & 8) -->
+    @if (activeTab() === 'predictive') {
+      <div class="predictive-layout glass-panel">
+        <div class="predictive-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 1.25rem;">
+          <div>
+            <h2>ML Predictive Maintenance & Vibration Diagnostics</h2>
+            <p>Predictive anomaly models trained on MongoDB time-series telemetry to calculate breakdown probabilities, likely failure causes, and recommended maintenance interventions.</p>
+          </div>
+          <div class="asset-dropdown-box" style="display: flex; align-items: center; gap: 0.8rem; background: rgba(17, 24, 39, 0.6); padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid rgba(6, 182, 212, 0.25);">
+            <label style="font-weight: 700; color: var(--cyan); font-size: 0.85rem; text-transform: uppercase;">Select Asset:</label>
+            <select [ngModel]="selectedPredictiveAssetId()" (ngModelChange)="selectPredictiveAsset($event)" style="background: rgb(13, 18, 30); color: var(--color-text); border: 1px solid rgba(255,255,255,0.12); padding: 0.35rem 0.75rem; border-radius: 4px; font-weight: 700; font-family: monospace; outline: none; cursor: pointer;">
+              @for (asset of predictiveAssets(); track asset.asset_id) {
+                <option [value]="asset.asset_id">{{ asset.asset_id }} ({{ asset.component_type }})</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="predictive-grid" style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 1.5rem; margin-top: 1.5rem;">
+          <!-- Left Column -->
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Asset Config Card -->
+            <div class="glass-card" style="padding: 1.25rem;">
+              <h3 style="color: var(--cyan); margin-bottom: 0.8rem;">📦 Asset Metadata</h3>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                  <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--color-text-muted);">Component Type</span>
+                  <span style="font-weight: 700; font-size: 0.9rem;">
+                    {{ selectedPredictiveAssetId() === 'Pump-101' ? 'Centrifugal Pump' : 'Vibration Bearing' }}
+                  </span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                  <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--color-text-muted);">Model Number</span>
+                  <span class="font-mono" style="font-weight: 700; font-size: 0.85rem; color: var(--warning);">
+                    {{ selectedPredictiveAssetId() === 'Pump-101' ? 'Centrifugal-P101' : 'SKF-6205-2RSH' }}
+                  </span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                  <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--color-text-muted);">Installation Date</span>
+                  <span class="font-mono" style="font-size: 0.85rem;">2025-11-14</span>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 1rem;">
+                <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                  <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--color-text-muted);">Max Operating RPM</span>
+                  <span class="font-mono" style="font-size: 0.85rem;">3600 RPM</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                  <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--color-text-muted);">Vibration Threshold Limit</span>
+                  <span class="font-mono" style="font-size: 0.85rem; color: var(--danger);">3.0g RMS</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                  <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--color-text-muted);">Critical Temp Threshold</span>
+                  <span class="font-mono" style="font-size: 0.85rem; color: var(--danger);">85.0 °C</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Probability Gauges Card -->
+            <div class="glass-card" style="padding: 1.25rem;">
+              <h3 style="margin-bottom: 1.2rem;">⏱️ Failure Probability Forecast</h3>
+              
+              <!-- Check if it is Pump-101 (which does not have bearing model curves, but has active trips) -->
+              @if (selectedPredictiveAssetId() === 'Pump-101') {
+                <div style="text-align: center; padding: 2rem; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.08);">
+                  <div style="font-size: 2.5rem; margin-bottom: 0.8rem;">🔌</div>
+                  <h4 style="margin-bottom: 0.3rem; color: var(--cyan);">Real-Time Sensor Trigger Mode</h4>
+                  <p style="font-size: 0.8rem; color: var(--color-text-muted); max-width: 320px; margin: 0 auto; line-height: 1.4;">
+                    Pump failure diagnostics are updated dynamically based on the active simulator state. Trigger a fault on the SCADA dashboard to view diagnostic metrics.
+                  </p>
+                </div>
+              } @else {
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; text-align: center;">
+                  <!-- 7 Days Gauge -->
+                  <div style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); position: relative;">
+                    <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-muted); margin-bottom: 0.5rem;">Within 7 Days</div>
+                    <div class="font-mono" style="font-size: 1.8rem; font-weight: 800;" [style.color]="getProbabilityColor(predictiveData()?.failure_probabilities?.within_7_days || 18)">
+                      {{ predictiveData()?.failure_probabilities?.within_7_days || 18 }}%
+                    </div>
+                    <div style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 0.8rem; overflow: hidden;">
+                      <div [style.width.%]="predictiveData()?.failure_probabilities?.within_7_days || 18" [style.background]="getProbabilityColor(predictiveData()?.failure_probabilities?.within_7_days || 18)" [style.box-shadow]="'0 0 8px ' + getProbabilityColor(predictiveData()?.failure_probabilities?.within_7_days || 18)" style="height: 100%;"></div>
+                    </div>
+                  </div>
+
+                  <!-- 14 Days Gauge -->
+                  <div style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); position: relative;">
+                    <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-muted); margin-bottom: 0.5rem;">Within 14 Days</div>
+                    <div class="font-mono" style="font-size: 1.8rem; font-weight: 800;" [style.color]="getProbabilityColor(predictiveData()?.failure_probabilities?.within_14_days || 41)">
+                      {{ predictiveData()?.failure_probabilities?.within_14_days || 41 }}%
+                    </div>
+                    <div style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 0.8rem; overflow: hidden;">
+                      <div [style.width.%]="predictiveData()?.failure_probabilities?.within_14_days || 41" [style.background]="getProbabilityColor(predictiveData()?.failure_probabilities?.within_14_days || 41)" [style.box-shadow]="'0 0 8px ' + getProbabilityColor(predictiveData()?.failure_probabilities?.within_14_days || 41)" style="height: 100%;"></div>
+                    </div>
+                  </div>
+
+                  <!-- 30 Days Gauge -->
+                  <div style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); position: relative;">
+                    <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-muted); margin-bottom: 0.5rem;">Within 30 Days</div>
+                    <div class="font-mono" style="font-size: 1.8rem; font-weight: 800;" [style.color]="getProbabilityColor(predictiveData()?.failure_probabilities?.within_30_days || 79)">
+                      {{ predictiveData()?.failure_probabilities?.within_30_days || 79 }}%
+                    </div>
+                    <div style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 0.8rem; overflow: hidden;">
+                      <div [style.width.%]="predictiveData()?.failure_probabilities?.within_30_days || 79" [style.background]="getProbabilityColor(predictiveData()?.failure_probabilities?.within_30_days || 79)" [style.box-shadow]="'0 0 8px ' + getProbabilityColor(predictiveData()?.failure_probabilities?.within_30_days || 79)" style="height: 100%;"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="prediction-alert-banner" style="margin-top: 1.25rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); padding: 0.8rem 1.25rem; border-radius: 6px; display: flex; align-items: center; gap: 0.8rem;">
+                  <span style="font-size: 1.3rem;">⚠️</span>
+                  <span style="font-size: 0.85rem; font-weight: 700; color: #ff6b6b; font-family: monospace;">
+                    {{ predictiveData()?.message }}
+                  </span>
+                </div>
+              }
+            </div>
+
+            <!-- Vibration Trend Line Graph Card -->
+            @if (selectedPredictiveAssetId() !== 'Pump-101') {
+              <div class="glass-card" style="padding: 1.25rem;">
+                <h3 style="margin-bottom: 0.5rem;">📈 Time-Series Vibration Degradation (MongoDB)</h3>
+                <p style="font-size: 0.75rem; color: var(--color-text-muted); margin-bottom: 1.2rem;">Historical 20-day sensor log tracking acceleration RMS (g) showing machine wear signature.</p>
+                
+                <div style="background: rgba(8,10,18,0.4); border-radius: 6px; padding: 1rem; border: 1px solid rgba(255,255,255,0.05);">
+                  <div style="height: 120px; position: relative;">
+                    <!-- Simple Mock graph line utilizing SVG -->
+                    <svg viewBox="0 0 400 100" style="width: 100%; height: 100%;" preserveAspectRatio="none">
+                      <!-- Grid lines -->
+                      <line x1="0" y1="20" x2="400" y2="20" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+                      <line x1="0" y1="50" x2="400" y2="50" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+                      <line x1="0" y1="80" x2="400" y2="80" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+                      
+                      <!-- Line path representing gradual increase -->
+                      <path d="M 0 85 Q 80 80, 160 70 T 320 40 T 400 20" fill="none" stroke="var(--danger)" stroke-width="2.5" />
+                      <!-- Dots at intervals -->
+                      <circle cx="0" cy="85" r="3.5" fill="var(--danger)" />
+                      <circle cx="100" cy="78" r="3.5" fill="var(--danger)" />
+                      <circle cx="200" cy="65" r="3.5" fill="var(--danger)" />
+                      <circle cx="300" cy="45" r="3.5" fill="var(--danger)" />
+                      <circle cx="400" cy="20" r="3.5" fill="var(--danger)" />
+                    </svg>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--color-text-muted); margin-top: 0.5rem; font-family: monospace;">
+                    <span>t-20 Days (0.8g)</span>
+                    <span>t-10 Days (1.5g)</span>
+                    <span>Current (2.8g RMS)</span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Right Column -->
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Predictive Diagnostics Card -->
+            <div class="glass-card" style="padding: 1.25rem;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <h3 style="color: var(--cyan);">🧠 AI Predictive Diagnostics</h3>
+                <span class="status-pill-badge" 
+                  [class.critical]="predictiveData()?.status === 'STOPPED' || predictiveData()?.status === 'CRITICAL'"
+                  [class.resolved]="predictiveData()?.status === 'RUNNING' || predictiveData()?.status === 'NORMAL'"
+                  [class.in-progress]="predictiveData()?.status === 'WARNING'">
+                  {{ predictiveData()?.status }}
+                </span>
+              </div>
+
+              <div style="margin-bottom: 1rem; padding: 0.8rem; background: rgba(6, 182, 212, 0.05); border: 1px solid rgba(6, 182, 212, 0.15); border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--cyan);">ML Classification Confidence:</span>
+                <span class="font-mono" style="font-weight: 800; font-size: 1.1rem; color: var(--cyan);">{{ predictiveData()?.confidence }}%</span>
+              </div>
+
+              <!-- Estimated Downtime (if stopped or critical) -->
+              @if (predictiveData()?.estimated_downtime && predictiveData()?.estimated_downtime !== '0 minutes') {
+                <div style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.15); padding: 0.8rem; border-radius: 6px;">
+                  <span style="font-size: 0.8rem; font-weight: 700; color: var(--danger);">Estimated Diagnostic Downtime:</span>
+                  <span class="font-mono" style="font-weight: 800; color: #ff6b6b; font-size: 1rem; background: rgba(239,68,68,0.2); padding: 2px 8px; border-radius: 4px;">
+                    {{ predictiveData()?.estimated_downtime }}
+                  </span>
+                </div>
+              }
+
+              <!-- Likely Causes -->
+              @if (predictiveData()?.likely_causes && predictiveData()?.likely_causes.length > 0) {
+                <div style="margin-bottom: 1.25rem;">
+                  <h4 style="margin-bottom: 0.6rem; font-size: 0.8rem; text-transform: uppercase; color: var(--color-text-muted);">Likely Causes:</h4>
+                  <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                    @for (item of predictiveData()?.likely_causes; track item.cause) {
+                      <div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; font-family: monospace; margin-bottom: 0.2rem;">
+                          <span>✓ {{ item.cause }}</span>
+                          <span style="color: var(--cyan);">{{ item.probability }}%</span>
+                        </div>
+                        <div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden;">
+                          <div [style.width.%]="item.probability" style="height: 100%; background: var(--cyan);"></div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+
+              <!-- Recommended Checks -->
+              @if (predictiveData()?.recommended_checks && predictiveData()?.recommended_checks.length > 0) {
+                <div style="margin-bottom: 0.5rem;">
+                  <h4 style="margin-bottom: 0.6rem; font-size: 0.8rem; text-transform: uppercase; color: var(--color-text-muted);">Recommended Checks:</h4>
+                  <ul class="check-list" style="padding-left: 0; margin: 0; list-style: none;">
+                    @for (check of predictiveData()?.recommended_checks; track check; let idx = $index) {
+                      <li class="font-mono" style="font-size: 0.78rem; padding: 0.5rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 4px; margin-bottom: 0.4rem; line-height: 1.4; display: flex; gap: 0.5rem; align-items: flex-start;">
+                        <span style="color: var(--cyan); font-weight: 800;">{{ idx + 1 }}.</span>
+                        <span style="color: var(--color-text-muted);">{{ check }}</span>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+
+            <!-- Maintenance Events Log -->
+            <div class="glass-card" style="padding: 1.25rem;">
+              <h3 style="color: var(--cyan); margin-bottom: 0.8rem;">📅 Maintenance History & Greasing Logs</h3>
+              <div class="notifications-history-list" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem;">
+                @for (log of predictiveMaintenance(); track log.event_id) {
+                  <div class="notif-log-item glass-card" style="padding: 0.8rem; margin: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                      <span class="notif-type-tag" [class.sms]="log.event_type === 'LUBRICATION'" [class.email]="log.event_type === 'INSPECTION'" [class.ticket]="log.event_type === 'PREVENTIVE_REPLACEMENT' || log.event_type === 'FAILURE'" style="font-size: 0.6rem;">
+                        {{ log.event_type }}
+                      </span>
+                      <span class="font-mono text-muted" style="font-size: 0.65rem;">{{ log.timestamp | date:'yyyy-MM-dd HH:mm' }}</span>
+                    </div>
+                    <div class="font-mono" style="font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.3;">{{ log.notes }}</div>
+                    <div class="font-mono text-cyan" style="font-size: 0.75rem; margin-top: 0.3rem;">Action: {{ log.technician_action }}</div>
+                  </div>
+                }
+                @if (predictiveMaintenance().length === 0) {
+                  <div class="text-center text-muted" style="padding: 2rem;">No historical maintenance logged for this bearing.</div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
     <!-- TAB 5: PRESENTATION ASSISTANT -->
     @if (activeTab() === 'presentation') {
       <div class="presentation-layout glass-panel">
@@ -1288,210 +1539,107 @@
           </div>
         </div>
 
-        <!-- Issues List Table -->
-        <div class="cmdb-table-container issues-table-container">
-          <table class="cmdb-table">
-            <thead>
-              <tr>
-                <th>Timestamp</th>
-                <th>Anomaly Class</th>
-                <th>Status</th>
-                <th>Diagnostic Narrative Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (issue of faultsHistory(); track issue.timestamp) {
-                <tr class="clickable-row" (click)="openIncidentDetail(issue)" title="Click to view forensic incident report">
-                  <td class="font-mono text-muted">{{ issue.timestamp | date:'yyyy-MM-dd HH:mm:ss' }}</td>
-                  <td>
-                    <span class="scada-badge" [class.badge-danger]="issue.type !== 'NORMAL'" [class.badge-success]="issue.type === 'NORMAL'">
-                      {{ issue.type }}
-                    </span>
-                  </td>
-                  <td>
-                    <span class="status-pill-badge" 
-                      [class.resolved]="issue.status === 'Resolved'"
-                      [class.in-progress]="issue.status === 'In Progress'"
-                      [class.critical]="issue.status === 'Critical'">
-                      {{ issue.status }}
-                    </span>
-                  </td>
-                  <td>{{ issue.description }}</td>
-                </tr>
-              }
-              @if (faultsHistory().length === 0) {
-                <tr>
-                  <td colspan="4" class="text-center text-muted" style="padding: 2rem;">No historical alarms registered in the database.</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+        <!-- Sub Tab Toggles -->
+        <div class="sub-tab-container" style="display: flex; gap: 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.5rem; margin-top: 0.5rem; margin-bottom: 1rem;">
+          <button class="tab-link" (click)="issuesSubTab.set('incidents')" style="background: none; border: none; cursor: pointer; padding: 0.5rem 1rem; font-weight: 700; font-size: 0.9rem; transition: color 0.2s;" [style.color]="issuesSubTab() === 'incidents' ? 'var(--cyan)' : 'var(--color-text-muted)'">
+            🚨 System Incidents (SCADA)
+          </button>
+          <button class="tab-link" (click)="issuesSubTab.set('dbalarms')" style="background: none; border: none; cursor: pointer; padding: 0.5rem 1rem; font-weight: 700; font-size: 0.9rem; transition: color 0.2s;" [style.color]="issuesSubTab() === 'dbalarms' ? 'var(--cyan)' : 'var(--color-text-muted)'">
+            🗄️ Database Alarms (MongoDB)
+          </button>
         </div>
 
-        <!-- Forensic Incident Report Drawer Overlay -->
-        @if (selectedIncident(); as inc) {
-          <div class="incident-drawer-overlay" (click)="closeIncidentDetail()">
-            <div class="incident-drawer" (click)="$event.stopPropagation()">
-              <div class="drawer-header">
-                <div class="drawer-header-left">
-                  <span class="inc-ref font-mono">{{ inc.id }}</span>
-                  <span class="scada-badge" [class.badge-danger]="inc.type !== 'NORMAL'" [class.badge-success]="inc.type === 'NORMAL'">{{ inc.type }}</span>
-                </div>
-                <button class="close-drawer-btn" (click)="closeIncidentDetail()">×</button>
-              </div>
-
-              <div class="drawer-body">
-                <!-- Status & High-level details -->
-                <div class="drawer-section border-glow-accent">
-                  <div class="drawer-grid-row">
-                    <div class="grid-item">
-                      <span class="label">Incident Status</span>
-                      <span class="val status-pill-badge" 
-                        [class.resolved]="inc.status === 'Resolved'"
-                        [class.in-progress]="inc.status === 'In Progress'"
-                        [class.critical]="inc.status === 'Critical'">
-                        {{ inc.status }}
+        <!-- Issues List Table -->
+        @if (issuesSubTab() === 'incidents') {
+          <div class="cmdb-table-container issues-table-container">
+            <table class="cmdb-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Anomaly Class</th>
+                  <th>Status</th>
+                  <th>Diagnostic Narrative Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (issue of faultsHistory(); track issue.timestamp) {
+                  <tr class="clickable-row" (click)="openIncidentDetail(issue)" title="Click to view forensic incident report">
+                    <td class="font-mono text-muted">{{ issue.timestamp | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                    <td>
+                      <span class="scada-badge" [class.badge-danger]="issue.type !== 'NORMAL'" [class.badge-success]="issue.type === 'NORMAL'">
+                        {{ issue.type }}
                       </span>
-                    </div>
-                    <div class="grid-item">
-                      <span class="label">AI Confidence</span>
-                      <span class="val font-mono text-cyan">{{ inc.telemetry.confidence }}%</span>
-                    </div>
-                    <div class="grid-item">
-                      <span class="label">Production Impact</span>
-                      <span class="val text-danger font-weight-700" [class.text-success]="inc.type === 'NORMAL'">{{ inc.impact }}</span>
-                    </div>
-                  </div>
-                  
-                  <div class="impact-desc font-mono">
-                    {{ inc.impactText }}
-                  </div>
-                </div>
-
-                <!-- Process Telemetry Snapshot -->
-                <div class="drawer-section">
-                  <h4>💡 Telemetry Snapshot (Trigger-Time)</h4>
-                  <div class="telemetry-snapshot-grid">
-                    <div class="snap-box">
-                      <span class="lbl">Inlet (FIT-101)</span>
-                      <span class="num font-mono">{{ inc.telemetry.fit101 }} <small>L/min</small></span>
-                    </div>
-                    <div class="snap-box">
-                      <span class="lbl">Outlet (FIT-102)</span>
-                      <span class="num font-mono">{{ inc.telemetry.fit102 }} <small>L/min</small></span>
-                    </div>
-                    <div class="snap-box">
-                      <span class="lbl">Pressure (PIT-101)</span>
-                      <span class="num font-mono text-warning">{{ inc.telemetry.pit101 }} <small>PSI</small></span>
-                    </div>
-                    <div class="snap-box">
-                      <span class="lbl">Motor Temp</span>
-                      <span class="num font-mono">{{ inc.telemetry.temp }} <small>°C</small></span>
-                    </div>
-                    <div class="snap-box">
-                      <span class="lbl">Vibration</span>
-                      <span class="num font-mono">{{ inc.telemetry.vib }} <small>mm/s</small></span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Alarms Log -->
-                <div class="drawer-section">
-                  <h4>🚨 Triggered Alarms</h4>
-                  <div class="alarms-container">
-                    <div class="alarm-group">
-                      <span class="group-title text-danger">Critical Alarms</span>
-                      <ul>
-                        @for (alarm of inc.criticalAlarms; track alarm) {
-                          <li class="font-mono text-danger" style="list-style: none;">• {{ alarm }}</li>
-                        }
-                        @if (inc.criticalAlarms.length === 0) {
-                          <li class="font-mono text-muted" style="list-style: none;">• None</li>
-                        }
-                      </ul>
-                    </div>
-                    <div class="alarm-group" style="margin-top: 1rem;">
-                      <span class="group-title text-warning">Minor Alarms</span>
-                      <ul>
-                        @for (alarm of inc.minorAlarms; track alarm) {
-                          <li class="font-mono text-warning" style="list-style: none;">• {{ alarm }}</li>
-                        }
-                        @if (inc.minorAlarms.length === 0) {
-                          <li class="font-mono text-muted" style="list-style: none;">• None</li>
-                        }
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Downtime & Resolution Activities -->
-                <div class="drawer-section">
-                  <h4>⚙️ Mitigation & Maintenance</h4>
-                  <div class="downtime-row">
-                    <div style="margin-bottom: 0.3rem;">
-                      <span class="lbl text-muted">Est. Standard Downtime: </span>
-                      <span class="val font-mono">{{ inc.estDowntime }}</span>
-                    </div>
-                    <div style="margin-bottom: 0.3rem;">
-                      <span class="lbl text-muted">Actual Process Interruption: </span>
-                      <span class="val font-mono text-success">{{ inc.actDowntime }}</span>
-                    </div>
-                    <div>
-                      <span class="lbl text-muted">Total SLA Resolution Duration: </span>
-                      <span class="val font-mono text-cyan">{{ inc.resDuration }}</span>
-                    </div>
-                  </div>
-
-                  <div style="margin-top: 1.2rem;">
-                    <span class="group-title">Executed Maintenance Activities:</span>
-                    <ul class="check-list" style="margin-top: 0.4rem; padding-left: 0;">
-                      @for (act of inc.maintActivities; track act) {
-                        <li class="font-mono" style="list-style: none;">• {{ act }}</li>
-                      }
-                    </ul>
-                  </div>
-                </div>
-
-                <!-- AI Predictive Insights -->
-                <div class="drawer-section border-glow-warning">
-                  <h4>🧠 AI Predictive Diagnostics</h4>
-                  <p class="prediction-text font-mono" style="margin-bottom: 0.8rem;">{{ inc.predictedFailures }}</p>
-                  
-                  <div>
-                    <span class="group-title">Recommended Inspections:</span>
-                    <ul class="inspections-list" style="margin-top: 0.4rem; padding-left: 0;">
-                      @for (insp of inc.recommendedInspections; track insp) {
-                        <li class="font-mono" style="list-style: none;">✓ {{ insp }}</li>
-                      }
-                    </ul>
-                  </div>
-                </div>
-
-                <!-- Incident History Timeline -->
-                <div class="drawer-section">
-                  <h4>📅 Complete Incident Timeline</h4>
-                  <div class="incident-timeline" style="margin-top: 0.8rem;">
-                    @for (step of inc.timeline; track step.time) {
-                      <div class="timeline-item" style="display: flex; gap: 1rem; margin-bottom: 1rem; align-items: flex-start;">
-                        <div class="timeline-time font-mono text-muted" style="font-size: 0.75rem; white-space: nowrap; width: 65px;">{{ step.time | date:'HH:mm:ss' }}</div>
-                        <div class="timeline-details" style="flex: 1;">
-                          <span class="scada-badge font-mono" 
-                            [class.badge-danger]="step.status === 'Anomaly Detected' || step.status === 'Escalated'"
-                            [class.badge-warning]="step.status === 'Pending' || step.status === 'In Progress'"
-                            [class.badge-success]="step.status === 'Resolved' || step.status === 'Normal' || step.status === 'Mitigation Applied'">
-                            {{ step.status }}
-                          </span>
-                          <p class="timeline-desc font-mono" style="font-size: 0.8rem; margin-top: 0.3rem; line-height: 1.4;">{{ step.event }}</p>
-                        </div>
-                      </div>
-                    }
-                  </div>
-                </div>
-
-              </div>
-            </div>
+                    </td>
+                    <td>
+                      <span class="status-pill-badge" 
+                        [class.resolved]="issue.status === 'Resolved'"
+                        [class.in-progress]="issue.status === 'In Progress'"
+                        [class.critical]="issue.status === 'Critical'">
+                        {{ issue.status }}
+                      </span>
+                    </td>
+                    <td>{{ issue.description }}</td>
+                  </tr>
+                }
+                @if (faultsHistory().length === 0) {
+                  <tr>
+                    <td colspan="4" class="text-center text-muted" style="padding: 2rem;">No historical alarms registered in the database.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
           </div>
         }
+
+        @if (issuesSubTab() === 'dbalarms') {
+          <div class="cmdb-table-container issues-table-container">
+            <table class="cmdb-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Equipment</th>
+                  <th>Alarm Name</th>
+                  <th>Severity</th>
+                  <th>Diagnostic Reason</th>
+                  <th>Immediate Action & Maintenance</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (alarm of dbAlarms(); track alarm.timestamp) {
+                  <tr>
+                    <td class="font-mono text-muted">{{ alarm.timestamp | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                    <td class="font-mono text-cyan">{{ alarm.equipment }}</td>
+                    <td style="font-weight: 700;">{{ alarm.alarm }}</td>
+                    <td>
+                      <span class="scada-badge" [class.badge-danger]="alarm.severity === 'Critical' || alarm.severity === 'Danger'" [class.badge-warning]="alarm.severity === 'Warning'">
+                        {{ alarm.severity }}
+                      </span>
+                    </td>
+                    <td class="font-mono" style="font-size: 0.8rem; max-width: 250px; line-height: 1.4; color: var(--color-text-muted);">{{ alarm.reason }}</td>
+                    <td class="font-mono" style="font-size: 0.8rem; max-width: 250px; line-height: 1.4;">
+                      <div class="text-warning" style="color: var(--warning);">Action: {{ alarm.immediate_action }}</div>
+                      <div class="text-success" style="color: var(--success); margin-top: 0.2rem;">Maint: {{ alarm.maintenance }}</div>
+                    </td>
+                    <td>
+                      <span class="status-pill-badge" [class.resolved]="alarm.acknowledged" [class.critical]="!alarm.acknowledged">
+                        {{ alarm.acknowledged ? 'Acknowledged' : 'Active Alert' }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+                @if (dbAlarms().length === 0) {
+                  <tr>
+                    <td colspan="7" class="text-center text-muted" style="padding: 2rem;">No custom database alarms found in the MongoDB collection.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <!-- Forensic Incident Report Drawer Overlay -->
+
       </div>
     }
 
@@ -1836,14 +1984,86 @@
         </div>
         <div class="modal-body">
           @if (telemetryService.liveData()?.telemetry?.alarm_acknowledged === false) {
-            <div class="alarm-countdown-banner" [class.escalated]="isEscalated()">
+            <div class="alarm-countdown-banner" [class.escalated]="isEscalated()" style="margin-bottom: 1rem;">
               @if (isEscalated()) {
                 <span class="countdown-pulse-ring"></span>
-                <strong>🚨 ALARM ESCALATED:</strong> SLA limit breached. Broadcast sent to Directors.
+                <strong>🚨 CRITICAL SLA BREACH:</strong> Escalated to Plant Head. emergency shutdown active.
               } @else {
                 <span class="countdown-dot"></span>
-                <strong>⚠️ ESCALATION SLA ACTIVE:</strong> <strong>{{ escalationCountdown() }}s</strong> remaining to acknowledge.
+                <strong>⚠️ SLA ESCALATION ACTIVE:</strong> <strong>{{ escalationCountdown() }}s</strong> to next milestone.
               }
+            </div>
+
+            <!-- Escalation Flow Timeline Matrix -->
+            <div class="glass-card" style="padding: 1rem; margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.08); background: rgba(17, 24, 39, 0.4); text-align: left;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.5rem; margin-bottom: 0.6rem;">
+                <span style="font-weight: 700; color: var(--cyan); font-size: 0.8rem; text-transform: uppercase;">Alarm Escalation Matrix Flow</span>
+                <button (click)="isTimeAcceleration.set(!isTimeAcceleration())" style="background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.3); color: var(--cyan); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 0.2rem;">
+                  <span>{{ isTimeAcceleration() ? '⏸️ Standard SLA' : '⏩ Fast-Forward (20x)' }}</span>
+                </button>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; font-size: 0.7rem; font-family: monospace; color: var(--color-text-muted); margin-bottom: 0.8rem; background: rgba(0,0,0,0.15); padding: 0.3rem 0.6rem; border-radius: 4px;">
+                <span>Elapsed: <strong style="color: var(--cyan);">{{ escalationTimeElapsed() }}s / 600s</strong></span>
+                <span>Stage: <strong style="color: var(--warning);">
+                  {{ escalatedLevel() === 0 ? 'Incident Opened' : (escalatedLevel() === 1 ? 'Voice Bot Call' : (escalatedLevel() === 2 ? 'L1: Shift Eng' : (escalatedLevel() === 3 ? 'L2: Maint Mgr' : 'L3: Plant Head'))) }}
+                </strong></span>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                <!-- Step 1: Alarm & Ticket -->
+                <div style="display: flex; gap: 0.6rem; align-items: flex-start;">
+                  <span style="color: var(--success); font-size: 0.9rem;">✅</span>
+                  <div style="font-size: 0.75rem; line-height: 1.35;">
+                    <div style="font-weight: 700; color: #fff;">[0s] Alarm & Create Incident Ticket</div>
+                    <div style="color: var(--color-text-muted); font-family: monospace; font-size: 0.7rem;">Status: Completed (#WO-{{ activeAlarmDetails()?.faultType }} logged in CMDB).</div>
+                  </div>
+                </div>
+
+                <!-- Step 2: Voice Bot Call -->
+                <div style="display: flex; gap: 0.6rem; align-items: flex-start;" [style.opacity]="escalationTimeElapsed() >= 30 ? '1' : '0.4'">
+                  <span style="font-size: 0.9rem;">
+                    {{ escalationTimeElapsed() >= 30 ? '✅' : '⏳' }}
+                  </span>
+                  <div style="font-size: 0.75rem; line-height: 1.35;">
+                    <div style="font-weight: 700;" [style.color]="escalationTimeElapsed() >= 30 ? '#fff' : 'var(--color-text-muted)'">[30s] Call through Voice Bot</div>
+                    <div style="color: var(--color-text-muted); font-family: monospace; font-size: 0.7rem;">Status: {{ escalationTimeElapsed() >= 30 ? 'Executed (Automated voice call placed)' : 'Scheduled' }}</div>
+                  </div>
+                </div>
+
+                <!-- Step 3: Shift Engineer -->
+                <div style="display: flex; gap: 0.6rem; align-items: flex-start;" [style.opacity]="escalationTimeElapsed() >= 120 ? '1' : '0.4'">
+                  <span style="font-size: 0.9rem;">
+                    {{ escalationTimeElapsed() >= 120 ? '✅' : '⏳' }}
+                  </span>
+                  <div style="font-size: 0.75rem; line-height: 1.35;">
+                    <div style="font-weight: 700;" [style.color]="escalationTimeElapsed() >= 120 ? '#fff' : 'var(--color-text-muted)'">[2 Min] Notify Shift Engineer</div>
+                    <div style="color: var(--color-text-muted); font-family: monospace; font-size: 0.7rem;">Status: {{ escalationTimeElapsed() >= 120 ? 'Executed (Twilio SMS & Alert report sent)' : 'Scheduled' }}</div>
+                  </div>
+                </div>
+
+                <!-- Step 4: Maintenance Manager -->
+                <div style="display: flex; gap: 0.6rem; align-items: flex-start;" [style.opacity]="escalationTimeElapsed() >= 300 ? '1' : '0.4'">
+                  <span style="font-size: 0.9rem;">
+                    {{ escalationTimeElapsed() >= 300 ? '✅' : '⏳' }}
+                  </span>
+                  <div style="font-size: 0.75rem; line-height: 1.35;">
+                    <div style="font-weight: 700;" [style.color]="escalationTimeElapsed() >= 300 ? '#fff' : 'var(--color-text-muted)'">[5 Min] Notify Maintenance Manager</div>
+                    <div style="color: var(--color-text-muted); font-family: monospace; font-size: 0.7rem;">Status: {{ escalationTimeElapsed() >= 300 ? 'Executed (Escalated to Supervisor mobile)' : 'Scheduled' }}</div>
+                  </div>
+                </div>
+
+                <!-- Step 5: Plant Head -->
+                <div style="display: flex; gap: 0.6rem; align-items: flex-start;" [style.opacity]="escalationTimeElapsed() >= 600 ? '1' : '0.4'">
+                  <span style="font-size: 0.9rem;">
+                    {{ escalationTimeElapsed() >= 600 ? '🚨' : '⏳' }}
+                  </span>
+                  <div style="font-size: 0.75rem; line-height: 1.35;">
+                    <div style="font-weight: 700;" [style.color]="escalationTimeElapsed() >= 600 ? 'var(--danger)' : 'var(--color-text-muted)'">[10 Min] Notify Plant Head</div>
+                    <div style="color: var(--color-text-muted); font-family: monospace; font-size: 0.7rem;">Status: {{ escalationTimeElapsed() >= 600 ? 'Executed (Plant Head notified. Shutdown active)' : 'Scheduled' }}</div>
+                  </div>
+                </div>
+              </div>
             </div>
           }
 
@@ -1892,6 +2112,308 @@
             Apply AI Safety Interlock
           </button>
         </div>
+      </div>
+    </div>
+  }
+
+  <!-- Forensic Incident Report Drawer Overlay -->
+  @if (selectedIncident(); as inc) {
+    <div class="incident-drawer-overlay" (click)="closeIncidentDetail()">
+      <div class="incident-drawer" (click)="$event.stopPropagation()">
+        <div class="drawer-header">
+          <div class="drawer-header-left">
+            <span class="inc-ref font-mono">{{ inc.id }}</span>
+            <span class="scada-badge" [class.badge-danger]="inc.type !== 'NORMAL'" [class.badge-success]="inc.type === 'NORMAL'">{{ inc.type }}</span>
+          </div>
+          <button class="close-drawer-btn" (click)="closeIncidentDetail()">×</button>
+        </div>
+
+        <div class="drawer-body">
+          <!-- Status & High-level details -->
+          <div class="drawer-section border-glow-accent">
+            <div class="drawer-grid-row">
+              <div class="grid-item">
+                <span class="label">Incident Status</span>
+                <span class="val status-pill-badge" 
+                  [class.resolved]="inc.status === 'Resolved'"
+                  [class.in-progress]="inc.status === 'In Progress'"
+                  [class.critical]="inc.status === 'Critical'">
+                  {{ inc.status }}
+                </span>
+              </div>
+              <div class="grid-item">
+                <span class="label">AI Confidence</span>
+                <span class="val font-mono text-cyan">{{ inc.telemetry.confidence }}%</span>
+              </div>
+              <div class="grid-item">
+                <span class="label">Production Impact</span>
+                <span class="val text-danger font-weight-700" [class.text-success]="inc.type === 'NORMAL'">{{ inc.impact }}</span>
+              </div>
+            </div>
+            
+            <div class="impact-desc font-mono">
+              {{ inc.impactText }}
+            </div>
+          </div>
+
+          <!-- Process Telemetry Snapshot -->
+          <div class="drawer-section">
+            <h4>💡 Telemetry Snapshot (Trigger-Time)</h4>
+            <div class="telemetry-snapshot-grid">
+              <div class="snap-box">
+                <span class="lbl">Inlet (FIT-101)</span>
+                <span class="num font-mono">{{ inc.telemetry.fit101 }} <small>L/min</small></span>
+              </div>
+              <div class="snap-box">
+                <span class="lbl">Outlet (FIT-102)</span>
+                <span class="num font-mono">{{ inc.telemetry.fit102 }} <small>L/min</small></span>
+              </div>
+              <div class="snap-box">
+                <span class="lbl">Pressure (PIT-101)</span>
+                <span class="num font-mono text-warning">{{ inc.telemetry.pit101 }} <small>PSI</small></span>
+              </div>
+              <div class="snap-box">
+                <span class="lbl">Motor Temp</span>
+                <span class="num font-mono">{{ inc.telemetry.temp }} <small>°C</small></span>
+              </div>
+              <div class="snap-box">
+                <span class="lbl">Vibration</span>
+                <span class="num font-mono">{{ inc.telemetry.vib }} <small>mm/s</small></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alarms Log -->
+          <div class="drawer-section">
+            <h4>🚨 Triggered Alarms</h4>
+            <div class="alarms-container">
+              <div class="alarm-group">
+                <span class="group-title text-danger">Critical Alarms</span>
+                <ul>
+                  @for (alarm of inc.criticalAlarms; track alarm) {
+                    <li class="font-mono text-danger" style="list-style: none;">• {{ alarm }}</li>
+                  }
+                  @if (inc.criticalAlarms.length === 0) {
+                    <li class="font-mono text-muted" style="list-style: none;">• None</li>
+                  }
+                </ul>
+              </div>
+              <div class="alarm-group" style="margin-top: 1rem;">
+                <span class="group-title text-warning">Minor Alarms</span>
+                <ul>
+                  @for (alarm of inc.minorAlarms; track alarm) {
+                    <li class="font-mono text-warning" style="list-style: none;">• {{ alarm }}</li>
+                  }
+                  @if (inc.minorAlarms.length === 0) {
+                    <li class="font-mono text-muted" style="list-style: none;">• None</li>
+                  }
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Downtime & Resolution Activities -->
+          <div class="drawer-section">
+            <h4>⚙️ Mitigation & Maintenance</h4>
+            <div class="downtime-row">
+              <div style="margin-bottom: 0.3rem;">
+                <span class="lbl text-muted">Est. Standard Downtime: </span>
+                <span class="val font-mono">{{ inc.estDowntime }}</span>
+              </div>
+              <div style="margin-bottom: 0.3rem;">
+                <span class="lbl text-muted">Actual Process Interruption: </span>
+                <span class="val font-mono text-success">{{ inc.actDowntime }}</span>
+              </div>
+              <div>
+                <span class="lbl text-muted">Total SLA Resolution Duration: </span>
+                <span class="val font-mono text-cyan">{{ inc.resDuration }}</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 1.2rem;">
+              <span class="group-title">Executed Maintenance Activities:</span>
+              <ul class="check-list" style="margin-top: 0.4rem; padding-left: 0;">
+                @for (act of inc.maintActivities; track act) {
+                  <li class="font-mono" style="list-style: none;">• {{ act }}</li>
+                }
+              </ul>
+            </div>
+          </div>
+
+          <!-- AI Predictive Insights -->
+          <div class="drawer-section border-glow-warning">
+            <h4>🧠 AI Predictive Diagnostics</h4>
+            <p class="prediction-text font-mono" style="margin-bottom: 0.8rem;">{{ inc.predictedFailures }}</p>
+            
+            <div>
+              <span class="group-title">Recommended Inspections:</span>
+              <ul class="inspections-list" style="margin-top: 0.4rem; padding-left: 0;">
+                @for (insp of inc.recommendedInspections; track insp) {
+                  <li class="font-mono" style="list-style: none;">✓ {{ insp }}</li>
+                }
+              </ul>
+            </div>
+          </div>
+
+          <!-- Incident History Timeline -->
+          <div class="drawer-section">
+            <h4>📅 Complete Incident Timeline</h4>
+            <div class="incident-timeline" style="margin-top: 0.8rem;">
+              @for (step of inc.timeline; track step.time) {
+                <div class="timeline-item" style="display: flex; gap: 1rem; margin-bottom: 1rem; align-items: flex-start;">
+                  <div class="timeline-time font-mono text-muted" style="font-size: 0.75rem; white-space: nowrap; width: 65px;">{{ step.time | date:'HH:mm:ss' }}</div>
+                  <div class="timeline-details" style="flex: 1;">
+                    <span class="scada-badge font-mono" 
+                      [class.badge-danger]="step.status === 'Anomaly Detected' || step.status === 'Escalated'"
+                      [class.badge-warning]="step.status === 'Pending' || step.status === 'In Progress'"
+                      [class.badge-success]="step.status === 'Resolved' || step.status === 'Normal' || step.status === 'Mitigation Applied'">
+                      {{ step.status }}
+                    </span>
+                    <p class="timeline-desc font-mono" style="font-size: 0.8rem; margin-top: 0.3rem; line-height: 1.4;">{{ step.event }}</p>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Equipment Digital Twin Overlay Dialog (Point 10) -->
+  @if (selectedDigitalTwinAsset(); as asset) {
+    <div class="modal-overlay" (click)="selectedDigitalTwinAsset.set(null)" style="z-index: 15000;">
+      <div class="glass-panel alarm-modal animate-modal-in" (click)="$event.stopPropagation()" style="width: 700px; max-width: 95vw; border-color: rgba(6, 182, 212, 0.35); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), var(--glow-cyan);">
+        
+        <!-- Header -->
+        <div class="modal-header" style="border-bottom: 1px solid rgba(6, 182, 212, 0.2); padding-bottom: 1rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 0.8rem;">
+            <span style="font-size: 2rem;">🎛️</span>
+            <div>
+              <h2 style="color: var(--cyan); text-shadow: 0 0 10px rgba(6, 182, 212, 0.5); font-size: 1.4rem; margin: 0;">{{ asset.name }}</h2>
+              <span class="font-mono text-muted" style="font-size: 0.75rem;">Asset ID: {{ asset.id }} | Serial: {{ asset.serial_number }}</span>
+            </div>
+          </div>
+          <button (click)="selectedDigitalTwinAsset.set(null)" style="background: none; border: none; color: var(--color-text-muted); font-size: 1.8rem; cursor: pointer; line-height: 1;">&times;</button>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-body" style="gap: 1.25rem; overflow-y: auto; max-height: 62vh; padding-right: 0.5rem; text-align: left;">
+          
+          <!-- Live Status & PLC Logic Reference -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div style="background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+              <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 0.2rem;">Live Status</div>
+              <span class="status-pill-badge" 
+                [class.resolved]="asset.live_status === 'RUNNING' || asset.live_status === 'OPEN (100%)' || asset.live_status === 'FILTERING'" 
+                [class.in-progress]="asset.live_status === 'STANDBY'"
+                [class.critical]="asset.live_status === 'STOPPED'">
+                {{ asset.live_status }}
+              </span>
+            </div>
+            <div style="background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+              <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 0.2rem;">PLC Logic Reference</div>
+              <span class="font-mono" style="font-size: 0.8rem; font-weight: 700; color: var(--cyan);">{{ asset.plc_logic_reference }}</span>
+            </div>
+          </div>
+
+          <!-- Historical Trends Summary -->
+          <div style="background: rgba(255,255,255,0.02); padding: 0.8rem 1rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+            <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--cyan); margin-bottom: 0.4rem;">📈 Historical Sensor Trends</div>
+            <p class="font-mono text-muted" style="font-size: 0.8rem; margin: 0; line-height: 1.4;">{{ asset.historical_trends }}</p>
+          </div>
+
+          <!-- Manuals & Diagrams -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div style="background: rgba(255,255,255,0.02); padding: 0.8rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--color-text-muted);">Technical Drawings</div>
+                <span class="font-mono" style="font-size: 0.8rem; font-weight: 700; color: #fff;">{{ asset.drawings }}</span>
+              </div>
+              <a href="#" (click)="$event.preventDefault()" style="color: var(--cyan); font-size: 0.85rem; font-weight: 700; text-decoration: none;">View DWG ↗</a>
+            </div>
+            <div style="background: rgba(255,255,255,0.02); padding: 0.8rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--color-text-muted);">Operations Manual</div>
+                <span class="font-mono" style="font-size: 0.8rem; font-weight: 700; color: #fff;">{{ asset.manuals }}</span>
+              </div>
+              <a href="#" (click)="$event.preventDefault()" style="color: var(--cyan); font-size: 0.85rem; font-weight: 700; text-decoration: none;">View PDF ↗</a>
+            </div>
+          </div>
+
+          <!-- Installed Spare Parts -->
+          <div>
+            <h4 style="color: var(--cyan); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 0.5rem; border-left: 3px solid var(--cyan); padding-left: 0.5rem;">⚙️ Installed Spare Parts Catalogue</h4>
+            <table class="cmdb-table" style="font-size: 0.8rem;">
+              <thead>
+                <tr>
+                  <th>Part Name</th>
+                  <th>Part Number</th>
+                  <th>Approved Vendor</th>
+                  <th style="text-align: center;">Qty</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (spare of asset.installed_spare_parts; track spare.part_number) {
+                  <tr>
+                    <td style="font-weight: 700;">{{ spare.part_name }}</td>
+                    <td class="font-mono text-warning" style="color: var(--warning);">{{ spare.part_number }}</td>
+                    <td>{{ spare.vendor }}</td>
+                    <td class="font-mono text-center">{{ spare.quantity }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Maintenance History -->
+          <div>
+            <h4 style="color: var(--cyan); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 0.5rem; border-left: 3px solid var(--cyan); padding-left: 0.5rem;">📅 Maintenance History Logs</h4>
+            <table class="cmdb-table" style="font-size: 0.8rem;">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Activity Type</th>
+                  <th>Maintenance Narrative & Notes</th>
+                  <th>Tech</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (log of asset.maintenance_history; track log.date) {
+                  <tr>
+                    <td class="font-mono text-muted">{{ log.date }}</td>
+                    <td>
+                      <span class="scada-badge" [class.badge-success]="log.type === 'BACKWASH'" [class.badge-warning]="log.type === 'LUBRICATION'" [class.badge-danger]="log.type === 'ALIGNMENT' || log.type === 'REPAIR'">
+                        {{ log.type }}
+                      </span>
+                    </td>
+                    <td>{{ log.notes }}</td>
+                    <td class="font-mono text-center text-muted">{{ log.technician }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Vendor Contact details -->
+          <div style="background: rgba(6, 182, 212, 0.05); padding: 0.8rem 1rem; border-radius: 6px; border: 1px solid rgba(6, 182, 212, 0.15); display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--cyan); font-weight: 700;">Authorized OEM Vendor Contacts</div>
+              <span class="font-mono text-muted" style="font-size: 0.8rem; line-height: 1.4;">{{ asset.vendor_contacts }}</span>
+            </div>
+            <span style="font-size: 1.5rem;">📞</span>
+          </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.8rem; display: flex; justify-content: flex-end;">
+          <button class="modal-action-btn secondary-btn" (click)="selectedDigitalTwinAsset.set(null)">
+            Close Twin
+          </button>
+        </div>
+
       </div>
     </div>
   }

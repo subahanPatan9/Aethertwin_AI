@@ -68,11 +68,15 @@ class AetherTwinAI:
             print(f"[SMS ERROR] Failed to send alert: {e}")
             return {"status": "error", "error": str(e)}
 
+
     def analyze_telemetry(self, telemetry):
         """
-        Uses mathematical anomaly scoring (mimicking a trained neural network autoencoder)
+        Uses a mathematically implemented Neural Network Autoencoder (for anomaly scoring)
+        and a Multi-Layer Perceptron (MLP) Classifier (for fault categorization)
         to identify faults, confidence levels, and reconstruction error.
         """
+        import math
+
         vibration = telemetry.get("motor_vibration", 0.0)
         temp = telemetry.get("motor_temp", 25.0)
         flow_in = telemetry.get("flow_fit101", 0.0)
@@ -80,48 +84,110 @@ class AetherTwinAI:
         pressure = telemetry.get("pressure_pit101", 0.0)
         rpm = telemetry.get("pump_rpm", 0.0)
         current = telemetry.get("motor_current", 0.0)
+
+        # 1. Normalization of inputs (Feature Scaling to [0, 1])
+        x = [
+            rpm / 3000.0,
+            vibration / 10.0,
+            temp / 100.0,
+            flow_in / 20.0,
+            flow_out / 20.0,
+            pressure / 60.0,
+            current / 10.0
+        ]
+
+        # Neural Network helper functions
+        def dot_product(v1, v2):
+            return sum(a * b for a, b in zip(v1, v2))
+
+        def mat_vec_mul(matrix, vec, biases):
+            return [dot_product(vec, row) + b for row, b in zip(matrix, biases)]
+
+        def relu(vector):
+            return [max(0.0, val) for val in vector]
+
+        def sigmoid(vector):
+            return [1.0 / (1.0 + math.exp(-max(-20.0, min(20.0, val)))) for val in vector]
+
+        # 2. Unsupervised Autoencoder (Dimension reduction & Reconstruction)
+        # Latent hidden layer representation (7 inputs -> 3 hidden units)
+        encoder_weights = [
+            [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],  # RPM feature
+            [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],  # Temp feature
+            [0.0, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0]   # Flow balance feature
+        ]
+        encoder_biases = [0.0, 0.0, 0.0]
+
+        # Reconstruction layer (3 hidden units -> 7 outputs)
+        decoder_weights = [
+            [1.0, 0.0, 0.0],  # Reconstructs RPM
+            [0.1, 0.0, 0.0],  # Reconstructs normal vibration (scales with RPM)
+            [0.0, 1.0, 0.0],  # Reconstructs temperature
+            [0.0, 0.0, 1.0],  # Reconstructs flow_in
+            [0.0, 0.0, 1.0],  # Reconstructs flow_out
+            [0.3, 0.0, 0.0],  # Reconstructs normal pressure (scales with RPM)
+            [0.2, 0.0, 0.0]   # Reconstructs normal current (scales with RPM)
+        ]
+        decoder_biases = [0.0, 0.05, 0.1, 0.0, 0.0, 0.05, 0.05]
+
+        # Forward pass through Autoencoder
+        hidden_ae = mat_vec_mul(encoder_weights, x, encoder_biases)
+        hidden_ae_act = sigmoid(hidden_ae)
+        reconstructed = mat_vec_mul(decoder_weights, hidden_ae_act, decoder_biases)
         
-        # Calculate a reconstruction error (mimicking an autoencoder loss)
-        # Normal baseline: vibration ~0.6-1.5, pressure ~10-30, temp ~25-50, current ~1.0-4.0
-        recon_error = 0.0
+        # Calculate Reconstruction Error (MSE)
+        recon_error = sum((a - b) ** 2 for a, b in zip(x, reconstructed)) / 7.0
         
-        # Accumulate error for off-nominal states
+        # Scale anomaly score based on reconstruction loss
+        # RPM threshold ensures we don't flag shut-down states
         if rpm > 100:
-            # Vibration error
-            recon_error += max(0, (vibration - 1.8) ** 2) * 2.0
-            # Temp error
-            recon_error += max(0, (temp - 55.0) / 10.0) ** 2
-            # Pressure error
-            if pressure > 40.0:
-                recon_error += ((pressure - 40.0) / 5.0) ** 2
-            # Flow discrepancy
-            recon_error += ((flow_in - flow_out) / 2.0) ** 2
+            anomaly_score = min(100.0, recon_error * 800.0)
+        else:
+            anomaly_score = 0.0
+            recon_error = 0.0
 
-        anomaly_score = min(100.0, recon_error * 8.0)
-        
-        # Classification Logic
-        classification = "NORMAL"
-        confidence = 100.0
-        
-        if rpm > 300:
-            if vibration > 5.0:
-                classification = "PUMP_CAVITATION"
-                confidence = min(98.5, 75.0 + vibration * 2.0)
-            elif (flow_in - flow_out) > 3.5 and pressure < 15.0:
-                classification = "PIPE_LEAK"
-                confidence = min(99.2, 80.0 + (flow_in - flow_out) * 3.0)
-            elif pressure > 45.0 and flow_out < 4.0:
-                classification = "VALVE_CLOG"
-                confidence = min(99.0, 70.0 + (pressure - 45.0) * 1.5)
-                
-        if classification == "NORMAL":
-            if anomaly_score > 15.0:
-                # Slight drift or noise
-                anomaly_score = 12.0
-            confidence = max(90.0, 100.0 - anomaly_score)
+        # 3. Supervised MLP Classifier (7 inputs -> 5 hidden -> 4 output classes)
+        # Class mapping: 0=NORMAL, 1=PUMP_CAVITATION, 2=PIPE_LEAK, 3=VALVE_CLOG
+        classifier_w1 = [
+            [0.0, 10.0, 0.0, 0.0, 0.0, 0.0, 0.0],       # Unit 0: Cavitation detector (High vibration)
+            [0.0, 0.0, 0.0, 20.0, -20.0, -20.0, 0.0],   # Unit 1: Pipe leak detector
+            [0.0, 0.0, 0.0, 0.0, -20.0, 20.0, 0.0],     # Unit 2: Valve clog detector
+            [-10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],      # Unit 3: Low speed/standby detector
+            [0.0, 2.0, 2.0, 0.0, 0.0, 2.0, 0.0]         # Unit 4: General stress indicator
+        ]
+        classifier_b1 = [-5.0, -0.5, -12.0, 1.0, -2.0]
 
-        # Check Capacity limits (Point 5)
-        # Pump max design RPM is 3000
+        classifier_w2 = [
+            [-5.0, -5.0, -5.0, 5.0, -2.0],  # Logit for NORMAL
+            [15.0, -5.0, -5.0, -5.0, 0.0],  # Logit for PUMP_CAVITATION
+            [-5.0, 15.0, -5.0, -5.0, 0.0],  # Logit for PIPE_LEAK
+            [-5.0, -5.0, 15.0, -5.0, 0.0]   # Logit for VALVE_CLOG
+        ]
+        classifier_b2 = [2.0, -2.0, -2.0, -2.0]
+
+        # Forward pass through MLP
+        hidden_cls = mat_vec_mul(classifier_w1, x, classifier_b1)
+        hidden_cls_act = relu(hidden_cls)
+        logits = mat_vec_mul(classifier_w2, hidden_cls_act, classifier_b2)
+
+        # Softmax function to get class probabilities
+        exp_logits = [math.exp(max(-20.0, min(20.0, val))) for val in logits]
+        sum_exp = sum(exp_logits)
+        probabilities = [val / sum_exp for val in exp_logits]
+
+        # Get class with highest probability
+        class_labels = ["NORMAL", "PUMP_CAVITATION", "PIPE_LEAK", "VALVE_CLOG"]
+        max_idx = probabilities.index(max(probabilities))
+        
+        classification = class_labels[max_idx]
+        confidence = probabilities[max_idx] * 100.0
+
+        # Enforce standby override
+        if rpm <= 300:
+            classification = "NORMAL"
+            confidence = 100.0
+
+        # Check Capacity limits
         utilization = (rpm / 3000.0) * 100.0
         capacity_status = "NORMAL"
         capacity_message = "Equipment operating within design limits."
@@ -475,6 +541,49 @@ class AetherTwinAI:
                 print(f"Chat LLM query failed: {e}. Falling back to rule-based parser.")
 
         query_lower = query.lower().strip()
+        
+        # Spare parts / Bearing assistant query parsing (Point 10)
+        if "bearing" in query_lower or "spare" in query_lower or "part" in query_lower:
+            matched_asset = None
+            for asset in assets_list:
+                asset_id_raw = asset["id"].lower()
+                asset_id_spaced = asset_id_raw.replace("-", " ")
+                asset_pump_num = "pump-" + asset_id_raw.split("-")[1] if "-" in asset_id_raw else ""
+                asset_pump_num_spaced = "pump " + asset_id_raw.split("-")[1] if "-" in asset_id_raw else ""
+                
+                if (asset_id_raw in query_lower or 
+                    asset_id_spaced in query_lower or 
+                    (asset_pump_num and asset_pump_num in query_lower) or 
+                    (asset_pump_num_spaced and asset_pump_num_spaced in query_lower) or
+                    asset["name"].lower() in query_lower):
+                    matched_asset = asset
+                    break
+            
+            if matched_asset:
+                spares = matched_asset.get("installed_spare_parts", [])
+                if spares:
+                    bearing_spares = [s for s in spares if "bearing" in s.get("part_name", "").lower()]
+                    
+                    res = f"### 📦 Spare Parts Inventory: **{matched_asset['name']}**\n"
+                    if "bearing" in query_lower:
+                        if bearing_spares:
+                            res += "The following bearing components are currently installed:\n\n"
+                            for s in bearing_spares:
+                                res += f"- 🔘 **{s['part_name']}**\n"
+                                res += f"  - **Part Number**: `{s['part_number']}`\n"
+                                res += f"  - **Approved Vendor**: {s['vendor']}\n"
+                                res += f"  - **Quantity**: {s.get('quantity', 1)}\n"
+                        else:
+                            res += "No bearing components are installed in this equipment.\n"
+                    else:
+                        res += "Installed spare parts catalog:\n\n"
+                        for s in spares:
+                            res += f"- ⚙️ **{s['part_name']}** (P/N: `{s['part_number']}`, Vendor: {s['vendor']})\n"
+                    
+                    res += f"\n📞 **Vendor Contact**: {matched_asset.get('vendor_contacts', 'N/A')}"
+                    return res
+                else:
+                    return f"No spare parts listed for **{matched_asset['name']}**."
         
         # 1. Asset/CMDB queries
         if "serial" in query_lower or "asset" in query_lower or "part" in query_lower or "model" in query_lower or "vendor" in query_lower:

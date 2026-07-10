@@ -1,7 +1,7 @@
 [
   {
     "id": "P-101",
-    "name": "High-Pressure Booster Pump",
+    "name": "High-Pressure Booster Pump (P-101)",
     "serial_number": "SN-PUMP-98721-X",
     "model": "Goulds 3196 (ANSI)",
     "manufacturer": "ITT Goulds Pumps",
@@ -13,11 +13,89 @@
     "warranty_expiry": "2027-03-12",
     "calibration_due": "2026-09-15",
     "amc_active": true,
-    "max_design_capacity": 24.0
+    "max_design_capacity": 24.0,
+    "live_status": "RUNNING",
+    "historical_trends": "Vibration: 0.6mm/s RMS (Stable), Operating Temperature: 42.5 °C (Nominal)",
+    "maintenance_history": [
+      {
+        "date": "2026-01-15",
+        "type": "LUBRICATION",
+        "notes": "Greased housing bearings with Mobilith SHC 100.",
+        "technician": "T-098"
+      },
+      {
+        "date": "2025-07-20",
+        "type": "ALIGNMENT",
+        "notes": "Laser alignment performed. Runout adjusted to <0.02mm.",
+        "technician": "T-102"
+      }
+    ],
+    "drawings": "D-P101-GA-REV2.dwg",
+    "manuals": "M-ITT-GOULDS-3196-OP.pdf",
+    "plc_logic_reference": "PLC_Prg.BoosterPumpControl (Tag: Pump_P101_Run)",
+    "installed_spare_parts": [
+      {
+        "part_name": "Radial Ball Bearing",
+        "part_number": "SKF-6205-2RSH",
+        "vendor": "SKF Bearings Corp",
+        "quantity": 2
+      },
+      {
+        "part_name": "Mechanical Shaft Seal",
+        "part_number": "JOHN-CRANE-5610",
+        "vendor": "John Crane Ltd",
+        "quantity": 1
+      }
+    ],
+    "vendor_contacts": "FlowServe India Support (support.in@flowserve.com, +91-22-6633-8800)"
+  },
+  {
+    "id": "P-102",
+    "name": "Auxiliary Booster Pump (P-102)",
+    "serial_number": "SN-PUMP-98722-Y",
+    "model": "Goulds 3196 (ANSI)",
+    "manufacturer": "ITT Goulds Pumps",
+    "vendor": "FlowServe Corp",
+    "installation_date": "2024-05-20",
+    "last_maintenance": "2026-02-12",
+    "replacement_url": "https://www.gouldspumps.com/Products/Centrifugal-Pumps/ANSI-Process/3196",
+    "degradation_rate": 0.004,
+    "warranty_expiry": "2027-05-20",
+    "calibration_due": "2026-10-12",
+    "amc_active": true,
+    "max_design_capacity": 24.0,
+    "live_status": "STANDBY",
+    "historical_trends": "Vibration: 0.2mm/s (Static), Temperature: 26.0 °C (Ambient)",
+    "maintenance_history": [
+      {
+        "date": "2026-02-12",
+        "type": "INSPECTION",
+        "notes": "Verified pump turns freely. Insulation resistance check OK.",
+        "technician": "T-115"
+      }
+    ],
+    "drawings": "D-P102-GA-REV1.dwg",
+    "manuals": "M-ITT-GOULDS-3196-OP.pdf",
+    "plc_logic_reference": "PLC_Prg.AuxPumpControl (Tag: Pump_P102_Start)",
+    "installed_spare_parts": [
+      {
+        "part_name": "Deep Groove Ball Bearing",
+        "part_number": "SKF-6306-2RS1",
+        "vendor": "SKF Bearings Corp",
+        "quantity": 2
+      },
+      {
+        "part_name": "Mechanical Shaft Seal",
+        "part_number": "JOHN-CRANE-5610",
+        "vendor": "John Crane Ltd",
+        "quantity": 1
+      }
+    ],
+    "vendor_contacts": "FlowServe India Support (support.in@flowserve.com, +91-22-6633-8800)"
   },
   {
     "id": "V-101",
-    "name": "Suction Side Control Valve",
+    "name": "Suction Side Control Valve (V-101)",
     "serial_number": "SN-VALVE-11029-A",
     "model": "Fisher ET Sliding-Stem",
     "manufacturer": "Emerson Automation Solutions",
@@ -29,11 +107,33 @@
     "warranty_expiry": "2026-03-12",
     "calibration_due": "2026-02-10",
     "amc_active": false,
-    "max_design_capacity": 100.0
+    "max_design_capacity": 100.0,
+    "live_status": "OPEN (100%)",
+    "historical_trends": "Stroke Feedback: 100% matched, Position Error: 0.15% (Nominal)",
+    "maintenance_history": [
+      {
+        "date": "2026-02-10",
+        "type": "CALIBRATION",
+        "notes": "Stroke calibrated. Replaced positioner packing seals.",
+        "technician": "T-102"
+      }
+    ],
+    "drawings": "D-V101-SLIDING-STEM.dwg",
+    "manuals": "M-FISHER-ET-GUIDE.pdf",
+    "plc_logic_reference": "PLC_Prg.InletValveControl (Tag: Valve_V101_Open)",
+    "installed_spare_parts": [
+      {
+        "part_name": "Teflon V-Ring Packing Kit",
+        "part_number": "FISHER-PTFE-10A",
+        "vendor": "Emerson Parts Division",
+        "quantity": 1
+      }
+    ],
+    "vendor_contacts": "Emerson India Support (valve.support@emerson.com, 1800-120-3377)"
   },
   {
     "id": "V-102",
-    "name": "Discharge Side Control Valve",
+    "name": "Discharge Side Control Valve (V-102)",
     "serial_number": "SN-VALVE-11030-B",
     "model": "Fisher EZ Globe Valve",
     "manufacturer": "Emerson Automation Solutions",
@@ -45,11 +145,33 @@
     "warranty_expiry": "2027-03-12",
     "calibration_due": "2026-08-10",
     "amc_active": true,
-    "max_design_capacity": 100.0
+    "max_design_capacity": 100.0,
+    "live_status": "OPEN (100%)",
+    "historical_trends": "Stroke Feedback: 100% matched, Position Error: 0.12% (Nominal)",
+    "maintenance_history": [
+      {
+        "date": "2026-02-10",
+        "type": "CALIBRATION",
+        "notes": "Checked stroke bounds and digital positioner.",
+        "technician": "T-102"
+      }
+    ],
+    "drawings": "D-V102-GLOBE-EZ.dwg",
+    "manuals": "M-FISHER-EZ-GUIDE.pdf",
+    "plc_logic_reference": "PLC_Prg.OutletValveControl (Tag: Valve_V102_Open)",
+    "installed_spare_parts": [
+      {
+        "part_name": "Diaphragm Kit",
+        "part_number": "FISHER-DIAPH-EZ",
+        "vendor": "Emerson Parts Division",
+        "quantity": 1
+      }
+    ],
+    "vendor_contacts": "Emerson India Support (valve.support@emerson.com, 1800-120-3377)"
   },
   {
     "id": "F-101",
-    "name": "Multi-Media Sand Filter",
+    "name": "Multi-Media Sand Filter (F-101)",
     "serial_number": "SN-FLTR-55321-S",
     "model": "Fleck 2850 Duplex",
     "manufacturer": "Pentair Water",
@@ -58,9 +180,31 @@
     "last_maintenance": "2026-05-01",
     "replacement_url": "https://www.pentair.com/en-us/products/business-industry/valves/fleck-2850.html",
     "degradation_rate": 0.002,
-    "warranty_expiry": "2026-04-18",
-    "calibration_due": "2026-05-01",
-    "amc_active": false,
-    "max_design_capacity": 60.0
+    "warranty_expiry": "2027-04-18",
+    "calibration_due": "2026-11-01",
+    "amc_active": true,
+    "max_design_capacity": 100.0,
+    "live_status": "FILTERING",
+    "historical_trends": "Diff Pressure: 3.4 PSI (Nominal), Bed Expansion: 12% during backwash",
+    "maintenance_history": [
+      {
+        "date": "2026-05-01",
+        "type": "BACKWASH",
+        "notes": "Completed dynamic backwash cycle. Media bed cleaned.",
+        "technician": "T-088"
+      }
+    ],
+    "drawings": "D-F101-DUPLEX-BED.dwg",
+    "manuals": "M-FLECK-2850-MANUAL.pdf",
+    "plc_logic_reference": "PLC_Prg.FilterCycleControl (Tag: Filter_F101_Backwash)",
+    "installed_spare_parts": [
+      {
+        "part_name": "Backwash Flow Control Button",
+        "part_number": "FLECK-12092",
+        "vendor": "Grainger Industrial Supply",
+        "quantity": 1
+      }
+    ],
+    "vendor_contacts": "Grainger Industrial Support (india@grainger.com, +91-124-463-5500)"
   }
 ]
