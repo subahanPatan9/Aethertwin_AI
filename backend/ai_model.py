@@ -586,14 +586,42 @@ class AetherTwinAI:
                     return f"No spare parts listed for **{matched_asset['name']}**."
         
         # 1. Asset/CMDB queries
-        if "serial" in query_lower or "asset" in query_lower or "part" in query_lower or "model" in query_lower or "vendor" in query_lower:
+        if ("serial" in query_lower or "asset" in query_lower or "part" in query_lower or 
+            "model" in query_lower or "vendor" in query_lower or "cmdb" in query_lower or 
+            "properties" in query_lower or "info" in query_lower or "details" in query_lower or
+            "record" in query_lower or "pump-101" in query_lower or "pump-102" in query_lower or
+            "v-101" in query_lower or "v-102" in query_lower or "f-101" in query_lower or "brg-" in query_lower):
+            
             matched_asset = None
             for asset in assets_list:
-                if asset["id"].lower() in query_lower or asset["name"].lower() in query_lower or ("pump" in query_lower and "P-101" in asset["id"]):
+                asset_id_raw = asset["id"].lower()
+                asset_id_spaced = asset_id_raw.replace("-", " ")
+                asset_pump_num = "pump-" + asset_id_raw.split("-")[1] if "-" in asset_id_raw else ""
+                asset_pump_num_spaced = "pump " + asset_id_raw.split("-")[1] if "-" in asset_id_raw else ""
+                
+                if (asset_id_raw in query_lower or 
+                    asset_id_spaced in query_lower or 
+                    (asset_pump_num and asset_pump_num in query_lower) or 
+                    (asset_pump_num_spaced and asset_pump_num_spaced in query_lower) or
+                    asset["name"].lower() in query_lower):
                     matched_asset = asset
                     break
             
+            # Fallback matching for P-101 if simply "pump-101" or "pump 101" is in query
+            if not matched_asset:
+                if "pump-101" in query_lower or "pump 101" in query_lower or "p-101" in query_lower:
+                    for asset in assets_list:
+                        if asset["id"] == "P-101":
+                            matched_asset = asset
+                            break
+                elif "pump-102" in query_lower or "pump 102" in query_lower or "p-102" in query_lower:
+                    for asset in assets_list:
+                        if asset["id"] == "P-102":
+                            matched_asset = asset
+                            break
+            
             if matched_asset:
+                spares_str = ", ".join([f"{s['part_name']} ({s['part_number']})" for s in matched_asset.get("installed_spare_parts", [])])
                 return (
                     f"### CMDB Asset Record: **{matched_asset['name']} ({matched_asset['id']})**\n"
                     f"- **Serial Number**: `{matched_asset['serial_number']}`\n"
@@ -602,6 +630,13 @@ class AetherTwinAI:
                     f"- **Vendor**: {matched_asset['vendor']}\n"
                     f"- **Installation Date**: {matched_asset['installation_date']}\n"
                     f"- **Last Maintenance**: {matched_asset['last_maintenance']}\n"
+                    f"- **Live Status**: `{matched_asset.get('live_status', 'N/A')}`\n"
+                    f"- **PLC Logic Tag**: `{matched_asset.get('plc_logic_reference', 'N/A')}`\n"
+                    f"- **Historical Trend**: {matched_asset.get('historical_trends', 'N/A')}\n"
+                    f"- **Technical Drawings**: `{matched_asset.get('drawings', 'N/A')}`\n"
+                    f"- **Manuals Document**: `{matched_asset.get('manuals', 'N/A')}`\n"
+                    f"- **Installed Spares**: {spares_str if spares_str else 'None'}\n"
+                    f"- **Vendor Contact**: {matched_asset.get('vendor_contacts', 'N/A')}\n"
                     f"- **Link to OEM Spec**: [OEM Datasheet]({matched_asset['replacement_url']})"
                 )
             
