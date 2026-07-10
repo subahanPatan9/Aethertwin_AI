@@ -247,4 +247,13 @@ class Database:
         
         return seed_assets
 
+    def get_db_alarms(self):
+        if self.use_mongo:
+            try:
+                cursor = self.db.alarms.find({}, {"_id": 0}).sort("timestamp", -1)
+                return list(cursor)
+            except Exception as e:
+                print(f"Mongo alarms read error: {e}")
+        return []
+
 db = Database()

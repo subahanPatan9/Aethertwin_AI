@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from simulator import simulator
 from ai_model import ai_engine
 from db import db
+from predictive_model import predictive_model
 
 # Initialize FastAPI App
 app = FastAPI(title="AetherTwin Backend Engine")
@@ -305,15 +306,18 @@ def acknowledge_alarm():
 
 @app.post("/api/auth/login")
 def login(creds: LoginRequest):
-    username = creds.username.lower().strip()
-    password = creds.password
+    username = creds.username.lower().strip() if creds.username else ""
+    password = creds.password.strip() if creds.password else ""
+    
+    env_username = os.environ.get("DEVOPS_USERNAME", "goh0972.hyd016@hackathonindia.net").lower().strip()
+    env_password = os.environ.get("DEVOPS_PASSWORD", "HYD@40*065").strip()
     
     # Lead Engineer Credentials
-    if username == "goh0972.hyd016@hackathonindia.net" and password == "HYD@40*065":
+    if username == env_username and password == env_password:
         return {
             "status": "SUCCESS",
             "role": "ENGINEER",
-            "username": "goh0972.hyd016@hackathonindia.net",
+            "username": env_username,
             "name": "Lead Control Engineer"
         }
     # Backup Engineer Credentials
@@ -362,6 +366,34 @@ def get_faults_history():
 @app.get("/api/notifications/history")
 def get_notifications_history():
     return db.get_notifications()
+
+@app.get("/api/db/alarms")
+def get_db_alarms():
+    return db.get_db_alarms()
+
+@app.get("/api/predictive/assets")
+def get_predictive_assets():
+    bearings = predictive_model.get_bearing_assets()
+    assets = [{"asset_id": "Pump-101", "component_type": "Pump", "model_number": "Centrifugal-P101"}]
+    assets.extend(bearings)
+    return assets
+
+@app.get("/api/predictive/high-risk")
+def get_predictive_high_risk():
+    return predictive_model.get_high_risk_assets()
+
+@app.get("/api/predictive/predictions/{asset_id}")
+def get_predictive_predictions(asset_id: str):
+    live_fault = simulator.active_fault
+    return predictive_model.get_predictions(asset_id, live_fault=live_fault)
+
+@app.get("/api/predictive/telemetry/{asset_id}")
+def get_predictive_telemetry(asset_id: str):
+    return predictive_model.get_telemetry_history(asset_id)
+
+@app.get("/api/predictive/maintenance/{asset_id}")
+def get_predictive_maintenance(asset_id: str):
+    return predictive_model.get_maintenance_history(asset_id)
 
 # Serve compiled Angular static files in production mode
 current_dir = os.path.dirname(os.path.abspath(__file__))

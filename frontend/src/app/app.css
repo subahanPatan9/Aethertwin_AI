@@ -102,6 +102,9 @@
   flex-direction: column;
   gap: 0.5rem;
   flex-grow: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 4px;
 }
 
 .nav-btn {
@@ -1507,9 +1510,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .alarm-modal {
-  width: 550px;
+  width: 600px;
   max-width: 90vw;
-  padding: 2.25rem;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  padding: 1.75rem;
   border-color: rgba(239, 68, 68, 0.35);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), var(--glow-red);
   background: rgba(17, 24, 39, 0.95);
@@ -1562,7 +1568,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .modal-body {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
+  overflow-y: auto;
+  flex-grow: 1;
+  padding-right: 0.5rem;
 }
 
 .modal-warning-text {
@@ -1608,9 +1617,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
-  margin-top: 2rem;
+  margin-top: 1rem;
   border-top: 1px solid var(--border-color);
-  padding-top: 1.25rem;
+  padding-top: 1rem;
 }
 
 .modal-action-btn {
@@ -2081,14 +2090,29 @@ input[type="range"]::-webkit-slider-thumb:hover {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 140px;
+  max-width: 165px;
 }
 
 .user-role {
   font-size: 0.55rem;
   font-weight: 700;
-  padding: 1px 6px;
+  padding: 2px 6px;
   width: fit-content;
+  border-radius: 4px;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.user-role.role-engineer {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ff6b6b;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.user-role.role-operator {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .logout-btn {
@@ -3188,5 +3212,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
   z-index: 2;
   background: rgba(15, 23, 42, 0.95);
   backdrop-filter: blur(8px);
+}
+
+.presenter-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
