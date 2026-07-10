@@ -138,9 +138,9 @@ class PredictiveModel:
                     "status": prediction.get("current_vibration_status", "NORMAL"),
                     "confidence": int(prediction.get("confidence_score", 0.9) * 100),
                     "failure_probabilities": {
-                        "within_7_days": p_7d if p_7d > 0 else 18,
-                        "within_14_days": p_14d if p_14d > 0 else 41,
-                        "within_30_days": p_30d if p_30d > 0 else 79
+                        "within_7_days": p_7d,
+                        "within_14_days": p_14d,
+                        "within_30_days": p_30d
                     },
                     "recommended_action": prediction.get("recommended_action", "Continuous telemetry monitoring."),
                     "message": "Bearing vibration increasing. Maintenance can be scheduled before failure."
