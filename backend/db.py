@@ -13,6 +13,10 @@ class Database:
         self.lock = threading.Lock()
         self.fallback_file = os.path.join(os.path.dirname(__file__), "db_fallback.json")
         
+        # Cache variables for performance optimization (Task 40)
+        self._assets_cache = None
+        self._assets_cache_time = 0.0
+        
         # Initialize default fallback structure if file does not exist
         if not os.path.exists(self.fallback_file):
             self._write_fallback({
@@ -36,6 +40,11 @@ class Database:
             self.db = self.client["aethertwin"]
             self.use_mongo = True
             print("Successfully connected to MongoDB.")
+            
+            # Enforce database indexes on critical queries (Task 40)
+            self.db.telemetry.create_index([("timestamp", -1)])
+            self.db.feedback.create_index([("timestamp", -1)])
+            self.db.audit_logs.create_index([("timestamp", -1)])
         except (ConnectionFailure, ServerSelectionTimeoutError) as e:
             print(f"MongoDB connection failed: {e}. Falling back to file-based database: {self.fallback_file}")
             self.use_mongo = False
@@ -227,6 +236,11 @@ class Database:
         return {**default_settings, **db_data.get("settings", {})}
 
     def get_assets(self):
+        import time
+        # Performance optimization: TTL cache (Task 40)
+        if self._assets_cache and (time.time() - self._assets_cache_time < 5.0):
+            return self._assets_cache
+            
         assets_file = os.path.join(os.path.dirname(__file__), "assets.json")
         try:
             with open(assets_file, "r") as f:
@@ -241,19 +255,137 @@ class Database:
                 if self.db.assets.count_documents({}) == 0 and len(seed_assets) > 0:
                     self.db.assets.insert_many(seed_assets)
                 cursor = self.db.assets.find({}, {"_id": 0})
-                return list(cursor)
+                res = list(cursor)
+                self._assets_cache = res
+                self._assets_cache_time = time.time()
+                return res
             except Exception as e:
                 print(f"Mongo assets read error: {e}")
         
+        self._assets_cache = seed_assets
+        self._assets_cache_time = time.time()
         return seed_assets
 
-    def get_db_alarms(self):
+    def save_feedback(self, prediction_id, is_correct, correct_label, notes):
+        record = {
+            "prediction_id": prediction_id,
+            "is_correct": is_correct,
+            "correct_label": correct_label,
+            "notes": notes,
+            "timestamp": datetime.now().isoformat()
+        }
         if self.use_mongo:
             try:
-                cursor = self.db.alarms.find({}, {"_id": 0}).sort("timestamp", -1)
+                self.db.feedback.insert_one(record)
+            except Exception as e:
+                print(f"Mongo feedback write error: {e}")
+        else:
+            db_data = self._read_fallback()
+            if "feedback" not in db_data:
+                db_data["feedback"] = []
+            db_data["feedback"].append(record)
+            self._write_fallback(db_data)
+
+    def get_feedback(self):
+        if self.use_mongo:
+            try:
+                cursor = self.db.feedback.find({}, {"_id": 0}).sort("timestamp", -1)
                 return list(cursor)
             except Exception as e:
-                print(f"Mongo alarms read error: {e}")
-        return []
+                print(f"Mongo feedback read error: {e}")
+        
+        db_data = self._read_fallback()
+        return db_data.get("feedback", [])
+
+    def save_audit_log(self, user, action, status, details):
+        record = {
+            "timestamp": datetime.now().isoformat(),
+            "user": user,
+            "action": action,
+            "status": status,
+            "details": details
+        }
+        if self.use_mongo:
+            try:
+                self.db.audit_logs.insert_one(record)
+            except Exception as e:
+                print(f"Mongo audit log write error: {e}")
+        else:
+            db_data = self._read_fallback()
+            if "audit_logs" not in db_data:
+                db_data["audit_logs"] = []
+            db_data["audit_logs"].append(record)
+            self._write_fallback(db_data)
+
+    def get_audit_logs(self):
+        if self.use_mongo:
+            try:
+                cursor = self.db.audit_logs.find({}, {"_id": 0}).sort("timestamp", -1)
+                return list(cursor)
+            except Exception as e:
+                print(f"Mongo audit logs read error: {e}")
+        
+        db_data = self._read_fallback()
+        return db_data.get("audit_logs", [])
+
+    def save_approval(self, approval_id, recommendation, priority, state="PENDING_APPROVAL"):
+        record = {
+            "approval_id": approval_id,
+            "recommendation": recommendation,
+            "priority": priority,
+            "state": state,
+            "timestamp": datetime.now().isoformat(),
+            "action_by": None,
+            "action_notes": None,
+            "action_timestamp": None
+        }
+        if self.use_mongo:
+            try:
+                self.db.approvals.insert_one(record)
+            except Exception as e:
+                print(f"Mongo approval write error: {e}")
+        else:
+            db_data = self._read_fallback()
+            if "approvals" not in db_data:
+                db_data["approvals"] = []
+            db_data["approvals"].append(record)
+            self._write_fallback(db_data)
+
+    def get_pending_approvals(self):
+        if self.use_mongo:
+            try:
+                cursor = self.db.approvals.find({"state": "PENDING_APPROVAL"}, {"_id": 0})
+                return list(cursor)
+            except Exception as e:
+                print(f"Mongo pending approvals query error: {e}")
+        
+        db_data = self._read_fallback()
+        return [a for a in db_data.get("approvals", []) if a.get("state") == "PENDING_APPROVAL"]
+
+    def action_approval(self, approval_id, action, engineer, notes):
+        timestamp = datetime.now().isoformat()
+        if self.use_mongo:
+            try:
+                self.db.approvals.update_one(
+                    {"approval_id": approval_id},
+                    {"$set": {
+                        "state": action,
+                        "action_by": engineer,
+                        "action_notes": notes,
+                        "action_timestamp": timestamp
+                    }}
+                )
+            except Exception as e:
+                print(f"Mongo approval action error: {e}")
+        else:
+            db_data = self._read_fallback()
+            for a in db_data.get("approvals", []):
+                if a.get("approval_id") == approval_id:
+                    a["state"] = action
+                    a["action_by"] = engineer
+                    a["action_notes"] = notes
+                    a["action_timestamp"] = timestamp
+                    break
+            self._write_fallback(db_data)
 
 db = Database()

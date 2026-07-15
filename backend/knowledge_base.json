@@ -1,0 +1,52 @@
+{
+  "documents": [
+    {
+      "category": "manual",
+      "keywords": ["pump", "p-101", "booster", "rpm", "bearing", "current", "temperature", "limits"],
+      "title": "Booster Pump P-101 Equipment Manual",
+      "content": "Booster Pump P-101 is a centrifugal pump designed for industrial fluid transmission. Specifications: Nominal speed: 1500 RPM, Maximum operational speed: 3000 RPM. Temperature limits: normal range 25-45 C, warning threshold >50 C, trip threshold >70 C. Motor current rating: 4.5A continuous, maximum current limit 6.0A. Recommended bearing type: deep groove ball bearing SKF-6306-2RS1. Impeller design: IMP-P101-SS316 stainless steel impeller. Suction valve V-101 must remain 100% open during running states to prevent suction head drop."
+    },
+    {
+      "category": "sop",
+      "keywords": ["cavitation", "p-101", "suction", "v-101", "vibration", "purge"],
+      "title": "SOP-042: Cavitation Mitigation and Suction Purge",
+      "content": "If cavitation is detected (vibration > 6.0 mm/s and flow < 5.0 L/min at speeds > 1000 RPM), immediately verify suction valve V-101 feedback loop. If V-101 is partially closed, perform emergency manual override to 100% open state. If vibration exceeds 8.0 mm/s for more than 10 seconds, trigger PLC trip block to prevent impeller pitting. Perform a suction line purge check for bubbles or debris blockages before restarting."
+    },
+    {
+      "category": "sop",
+      "keywords": ["leak", "pipe", "clamped", "v-102", "isolation", "drain"],
+      "title": "SOP-108: Pipeline Leak Isolation Procedure",
+      "content": "In the event of a discharge pipeline leak (flow differential FIT-101 vs. FIT-102 > 1.0 L/min), perform the following isolation steps: 1. Set pump P-101 RPM speed setpoint to 0. 2. Close outlet isolation valve V-102 to prevent downstream backflow. 3. Close inlet supply valve V-101. 4. Open product drain valve to divert remaining pipeline volume. 5. Dispatch technician with GASK-2IN-EPDM replacement seals to inspect flange welds."
+    },
+    {
+      "category": "sop",
+      "keywords": ["clog", "blockage", "valve", "clogged", "pressure", "backwash"],
+      "title": "SOP-215: Deadhead Blockage & Filter Backwash",
+      "content": "When deadhead pressure exceeds 45.0 PSI with elevated current draw, a blockage is present at V-102 or the sand filter. Procedure: 1. Throttle pump speed to 500 RPM to relieve thermal current strain. 2. Verify V-102 valve actuator position. 3. Trigger sand filter automated backwash cycle for 180 seconds. 4. Manually override V-102 to 100% open to flush residual particulate build-ups."
+    },
+    {
+      "category": "history",
+      "keywords": ["maintenance", "bearing", "skf", "replacement", "p-101"],
+      "title": "Maintenance Log: P-101 Bearing Overhaul",
+      "content": "Jan 12, 2026: Motor vibration was elevated (4.2 mm/s). Scheduled preventive bearing maintenance. Replaced drive-end bearing with SKF-6306-2RS1 deep groove ball bearing. Motor casing was regreased with high-temp synthetic grease. Post-maintenance vibration levels stabilized at 0.6 mm/s under 1500 RPM load."
+    },
+    {
+      "category": "history",
+      "keywords": ["maintenance", "winding", "motor", "insulation"],
+      "title": "Maintenance Log: Motor Winding Inspection",
+      "content": "March 15, 2026: Annual electrical inspection on P-101 booster motor. Winding resistance measured at 1.2 Ohms. Insulation resistance verified at 500 Megohms. Current draw nominal at 4.2A under full load. Recommended follow-up in March 2027."
+    },
+    {
+      "category": "incident",
+      "keywords": ["incident", "cavitation", "vibration", "damage", "impeller"],
+      "title": "Incident Report: June 2026 Cavitation Damage",
+      "content": "June 4, 2026: Suction valve V-101 actuator jammed at 35% open. Pump P-101 continued to run at 2200 RPM, causing severe cavitation. Vibration exceeded 9.5 mm/s. Impeller sustained pitting damage and was replaced. Recommended installing low suction pressure trip in PLC loop to prevent automatic restarts during high vibration."
+    },
+    {
+      "category": "incident",
+      "keywords": ["incident", "clog", "sand", "filter", "overpressure"],
+      "title": "Incident Report: July 2026 Filter Deadhead Event",
+      "content": "July 2, 2026: Sand filter became clogged with sand particulates, causing deadhead line pressure to surge to 52 PSI. Pump motor current peaked at 7.1A. High-pressure warning sensor failed to trigger. Motor temp hit 68 C before thermal shutdown. Cleaned sand filter and replaced valve solenoid actuator SOL-V102-24VDC."
+    }
+  ]
+}

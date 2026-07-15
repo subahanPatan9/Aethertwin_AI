@@ -26,6 +26,7 @@ class PlantSimulator:
         self.pump_health_index = 100.0
         self.cumulative_runtime = 0.0  # seconds
         self.alarm_acknowledged = True
+        self.remaining_useful_life = "365.0 days"
         
         # Last updated time
         self.last_update = time.time()
@@ -61,23 +62,9 @@ class PlantSimulator:
         # --- Physics Equations ---
         rpm_ratio = self.pump_rpm / 3000.0
         
-        # Accumulate runtime and calculate degradation
-        degradation_rate = 0.0
+        # Accumulate runtime (degradation calculated post-physics)
         if self.pump_rpm > 100:
             self.cumulative_runtime += dt
-            # Base normal wear-and-tear degradation
-            degradation_rate = 0.0005
-            
-            # Accelerated degradation under faults
-            if self.active_fault == "PUMP_CAVITATION":
-                degradation_rate = 0.08   # Destroys pump very quickly
-            elif self.active_fault == "VALVE_CLOG":
-                degradation_rate = 0.02   # Strains against deadhead pressure
-            elif self.active_fault == "PIPE_LEAK":
-                degradation_rate = 0.005  # Slight vibration increases wear
-                
-            self.pump_health_index -= degradation_rate * rpm_ratio * dt
-            self.pump_health_index = max(0.0, min(100.0, self.pump_health_index))
             
         # Normal calculations
         v101_ratio = self.valve_v101_open / 100.0
@@ -162,6 +149,49 @@ class PlantSimulator:
         self.motor_vibration += (target_vibration - self.motor_vibration) * vib_k
         self.motor_vibration = max(0.1, self.motor_vibration)
 
+        # Accumulate runtime and calculate degradation (Task 4)
+        degradation_rate = 0.0
+        if self.pump_rpm > 100:
+            # Base normal wear-and-tear degradation
+            degradation_rate = 0.0005
+            
+            # 1. Thermal stress multiplier
+            if self.motor_temp > 50.0:
+                degradation_rate += (self.motor_temp - 50.0) * 0.0002
+                
+            # 2. Overcurrent fatigue multiplier
+            if current_draw > 5.0:
+                degradation_rate += (current_draw - 5.0) * 0.002
+                
+            # 3. Vibration shock multiplier
+            degradation_rate += (self.motor_vibration ** 2) * 0.0001
+            
+            # Accelerated degradation under faults
+            if self.active_fault == "PUMP_CAVITATION":
+                degradation_rate += 0.08
+            elif self.active_fault == "VALVE_CLOG":
+                degradation_rate += 0.02
+            elif self.active_fault == "PIPE_LEAK":
+                degradation_rate += 0.005
+                
+            self.pump_health_index -= degradation_rate * rpm_ratio * dt
+            self.pump_health_index = max(0.0, min(100.0, self.pump_health_index))
+            
+        # 4. Predict Remaining Useful Life (RUL)
+        total_deg_per_sec = degradation_rate * rpm_ratio
+        if total_deg_per_sec > 0 and self.pump_health_index > 0:
+            seconds_remaining = self.pump_health_index / total_deg_per_sec
+            if seconds_remaining > 86400:
+                self.remaining_useful_life = f"{round(seconds_remaining / 86400.0, 1)} days"
+            elif seconds_remaining > 3600:
+                self.remaining_useful_life = f"{int(seconds_remaining / 3600)} hours"
+            elif seconds_remaining > 60:
+                self.remaining_useful_life = f"{int(seconds_remaining / 60)} minutes"
+            else:
+                self.remaining_useful_life = f"{int(seconds_remaining)} seconds"
+        else:
+            self.remaining_useful_life = "365.0 days"
+
         # --- Tank Level Integration (Liters/Min to Liters, 1 sec = dt/60 min)
         # Tank capacities: 200 Liters each
         # LIT levels are in % (volume / 200 * 100)
@@ -205,6 +235,7 @@ class PlantSimulator:
             "alarm_acknowledged": self.alarm_acknowledged,
             "active_fault": self.active_fault,
             "equipment_utilization": round(equipment_utilization, 2),
+            "remaining_useful_life": self.remaining_useful_life,
             "timestamp": time.time()
         }
 

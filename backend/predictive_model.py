@@ -26,6 +26,11 @@ class PredictiveModel:
 
     def get_predictions(self, asset_id, live_fault=None, live_telemetry=None):
         if asset_id == "Pump-101" or asset_id == "Pump-P101":
+            from simulator import simulator
+            sim_state = simulator.update()
+            rul = sim_state.get("remaining_useful_life", "365.0 days")
+            health = sim_state.get("pump_health_index", 100.0)
+            
             # Dynamic simulator-based pump predictions
             if live_fault and live_fault != "NORMAL":
                 if live_fault == "PUMP_CAVITATION":
@@ -46,7 +51,10 @@ class PredictiveModel:
                             "Review recent vibration history logs in DB."
                         ],
                         "estimated_downtime": "18 minutes",
-                        "message": "Bearing vibration increasing. Maintenance can be scheduled before failure."
+                        "message": "Bearing vibration increasing. Maintenance can be scheduled before failure.",
+                        "remaining_useful_life": rul,
+                        "health_index": health,
+                        "degradation_trend": "CRITICAL_ACCELERATING"
                     }
                 elif live_fault == "PIPE_LEAK":
                     return {
@@ -64,7 +72,10 @@ class PredictiveModel:
                             "Check system static pressure bounds."
                         ],
                         "estimated_downtime": "25 minutes",
-                        "message": "Mitigation sequence active. Please dispatch field crew to locate pipeline leak."
+                        "message": "Mitigation sequence active. Please dispatch field crew to locate pipeline leak.",
+                        "remaining_useful_life": rul,
+                        "health_index": health,
+                        "degradation_trend": "DEGRADING"
                     }
                 elif live_fault == "VALVE_CLOG":
                     return {
@@ -82,7 +93,10 @@ class PredictiveModel:
                             "Manually override valve positioner to verify range."
                         ],
                         "estimated_downtime": "12 minutes",
-                        "message": "Valve blockage detected. Check inlet valve V-101 immediately."
+                        "message": "Valve blockage detected. Check inlet valve V-101 immediately.",
+                        "remaining_useful_life": rul,
+                        "health_index": health,
+                        "degradation_trend": "CRITICAL_ACCELERATING"
                     }
             
             # Default normal pump state
@@ -96,7 +110,10 @@ class PredictiveModel:
                     "Verify daily grease logs."
                 ],
                 "estimated_downtime": "0 minutes",
-                "message": "Pump is operating normally within standard design bounds."
+                "message": "Pump is operating normally within standard design bounds.",
+                "remaining_useful_life": rul,
+                "health_index": health,
+                "degradation_trend": "STABLE"
             }
 
         # Otherwise, query bearing predictions from MongoDB
@@ -132,6 +149,30 @@ class PredictiveModel:
                 p_14d = int(probs.get("within_14_days", 0) * 100)
                 p_30d = int(probs.get("within_30_days", 0) * 100)
                 
+                # Calculate RUL
+                if p_30d <= 5:
+                    rul_days = 120.0
+                else:
+                    rul_days = 30.0 * (1.0 - (p_30d / 100.0)) + 7.0 * (1.0 - (p_7d / 100.0))
+                    rul_days = max(1.0, round(rul_days, 1))
+                
+                # Fetch trend
+                trend = "STABLE"
+                vibration_history = self.get_telemetry_history(asset_id)
+                if len(vibration_history) >= 5:
+                    vib_vals = [r["vibration"] for r in vibration_history]
+                    avg_first = sum(vib_vals[:3]) / 3.0
+                    avg_last = sum(vib_vals[-3:]) / 3.0
+                    delta = avg_last - avg_first
+                    if avg_first > 0:
+                        pct_change = delta / avg_first
+                        if pct_change > 0.5 or delta > 1.0:
+                            trend = "CRITICAL_ACCELERATING"
+                        elif pct_change > 0.1 or delta > 0.2:
+                            trend = "DEGRADING"
+                
+                bearing_health = max(0.0, min(100.0, 100.0 - p_30d * 1.2))
+
                 # Format to match user example
                 return {
                     "asset_id": asset_id,
@@ -143,7 +184,10 @@ class PredictiveModel:
                         "within_30_days": p_30d
                     },
                     "recommended_action": prediction.get("recommended_action", "Continuous telemetry monitoring."),
-                    "message": "Bearing vibration increasing. Maintenance can be scheduled before failure."
+                    "message": "Bearing vibration increasing. Maintenance can be scheduled before failure.",
+                    "remaining_useful_life": f"{rul_days} days",
+                    "health_index": round(bearing_health, 1),
+                    "degradation_trend": trend
                 }
         except Exception as e:
             print(f"Error fetching predictions for {asset_id}: {e}")
@@ -159,7 +203,10 @@ class PredictiveModel:
                 "within_30_days": 79
             },
             "recommended_action": "Schedule vibration analysis and bearing inspection.",
-            "message": "Bearing vibration increasing. Maintenance can be scheduled before failure."
+            "message": "Bearing vibration increasing. Maintenance can be scheduled before failure.",
+            "remaining_useful_life": "10.4 days",
+            "health_index": 5.2,
+            "degradation_trend": "DEGRADING"
         }
 
     def get_high_risk_assets(self):
@@ -188,12 +235,17 @@ class PredictiveModel:
                     pred = pred_doc[0]
                     p_30 = pred.get("failure_probabilities", {}).get("within_30_days", 0)
                     if p_30 > 0.70:
+                        p_7 = pred.get("failure_probabilities", {}).get("within_7_days", 0)
+                        rul_days = 30.0 * (1.0 - p_30) + 7.0 * (1.0 - p_7)
+                        rul_days = max(1.0, round(rul_days, 1))
+                        
                         high_risk.append({
                             "asset_id": asset_id,
                             "model_number": asset.get("model_number", "N/A"),
                             "vibration_status": pred.get("current_vibration_status", "NORMAL"),
                             "probability_30d": int(p_30 * 100),
-                            "recommended_action": pred.get("recommended_action", "")
+                            "recommended_action": pred.get("recommended_action", ""),
+                            "remaining_useful_life": f"{rul_days} days"
                         })
             return high_risk
         except Exception as e:
