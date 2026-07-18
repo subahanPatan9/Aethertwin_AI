@@ -1,3 +1,4 @@
+from app.core import config
 import time
 import os
 import base64
@@ -674,7 +675,7 @@ class RAGRetriever:
         import os
         import json
         
-        kb_path = os.path.join(os.path.dirname(__file__), "knowledge_base.json")
+        kb_path = os.path.join(config.BASE_DIR, "knowledge_base.json")
         if not os.path.exists(kb_path):
             return "No knowledge base documents found."
             
@@ -1172,7 +1173,7 @@ class AetherTwinAI:
         import json
         from datetime import datetime
         
-        reg_path = os.path.join(os.path.dirname(__file__), "models_registry.json")
+        reg_path = os.path.join(config.BASE_DIR, "models_registry.json")
         if not os.path.exists(reg_path):
             return {"status": "error", "message": "Models registry file not found."}
             
@@ -1187,7 +1188,7 @@ class AetherTwinAI:
         parts[-1] = str(int(parts[-1]) + 1)
         new_version = ".".join(parts)
         
-        from db import db
+        from app.repositories.db_repo import db
         feedback = db.get_feedback()
         incorrect_samples = [f for f in feedback if not f.get("is_correct", True)]
         
@@ -1398,12 +1399,12 @@ class AetherTwinAI:
             }
 
     def run_multi_agent_consensus(self, telemetry, rule_events):
-        from db import db
+        from app.repositories.db_repo import db
         assets_list = db.get_assets()
         return self.agent_coordinator.coordinate(telemetry, rule_events, assets_list)
 
     def calculate_predictive_risk_score(self, asset_id: str) -> dict:
-        from db import db
+        from app.repositories.db_repo import db
         history = db.get_telemetry_history(limit=5)
         
         active_fault = "NORMAL"
@@ -1465,7 +1466,7 @@ class AetherTwinAI:
         }
 
     def generate_shift_report(self) -> str:
-        from db import db
+        from app.repositories.db_repo import db
         import time
         from datetime import datetime
         

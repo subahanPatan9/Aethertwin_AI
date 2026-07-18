@@ -2,9 +2,9 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from simulator import simulator
-from ai_model import ai_engine
-from db import db
+from app.services.simulator.simulator import simulator
+from app.services.prediction.ai_model import ai_engine
+from app.repositories.db_repo import db
 
 def run_tests():
     print("=== Running Backend Integrity Tests ===")

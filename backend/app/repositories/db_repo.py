@@ -1,19 +1,20 @@
 import json
 import os
-from datetime import datetime
 import threading
+from datetime import datetime
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+from app.core import config
 
-class Database:
+class DatabaseRepository:
     def __init__(self):
         self.use_mongo = False
         self.client = None
         self.db = None
         self.lock = threading.Lock()
-        self.fallback_file = os.path.join(os.path.dirname(__file__), "db_fallback.json")
+        self.fallback_file = os.path.join(config.BASE_DIR, "db_fallback.json")
         
-        # Cache variables for performance optimization (Task 40)
+        # Cache variables for performance optimization
         self._assets_cache = None
         self._assets_cache_time = 0.0
         
@@ -31,17 +32,14 @@ class Database:
 
         # Try connecting to local MongoDB
         try:
-            # Check environment variable first (for Docker container link)
-            mongo_uri = os.environ.get("MONGO_URI", "mongodb://localhost:27017/")
-            # 1.5s timeout so startup is fast even if MongoDB is not running
-            self.client = MongoClient(mongo_uri, serverSelectionTimeoutMS=1500)
+            self.client = MongoClient(config.MONGO_URI, serverSelectionTimeoutMS=1500)
             # Force connection check
             self.client.admin.command('ping')
             self.db = self.client["aethertwin"]
             self.use_mongo = True
             print("Successfully connected to MongoDB.")
             
-            # Enforce database indexes on critical queries (Task 40)
+            # Enforce database indexes on critical queries
             self.db.telemetry.create_index([("timestamp", -1)])
             self.db.feedback.create_index([("timestamp", -1)])
             self.db.audit_logs.create_index([("timestamp", -1)])
@@ -237,11 +235,11 @@ class Database:
 
     def get_assets(self):
         import time
-        # Performance optimization: TTL cache (Task 40)
+        # Performance optimization: TTL cache
         if self._assets_cache and (time.time() - self._assets_cache_time < 5.0):
             return self._assets_cache
             
-        assets_file = os.path.join(os.path.dirname(__file__), "assets.json")
+        assets_file = os.path.join(config.BASE_DIR, "assets.json")
         try:
             with open(assets_file, "r") as f:
                 seed_assets = json.load(f)
@@ -360,7 +358,7 @@ class Database:
                 print(f"Mongo pending approvals query error: {e}")
         
         db_data = self._read_fallback()
-        return [a for a in db_data.get("approvals", []) if a.get("state") == "PENDING_APPROVAL"]
+        return [a for a in db_data.get("approvals", []) if isinstance(a, dict) and a.get("state") == "PENDING_APPROVAL"]
 
     def action_approval(self, approval_id, action, engineer, notes):
         timestamp = datetime.now().isoformat()
@@ -388,4 +386,5 @@ class Database:
                     break
             self._write_fallback(db_data)
 
-db = Database()
+# Instantiate singleton repository
+db = DatabaseRepository()

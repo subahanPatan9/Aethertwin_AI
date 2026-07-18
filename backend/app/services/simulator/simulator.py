@@ -148,8 +148,9 @@ class PlantSimulator:
         vib_k = 0.3 * dt
         self.motor_vibration += (target_vibration - self.motor_vibration) * vib_k
         self.motor_vibration = max(0.1, self.motor_vibration)
+        self.motor_vibration = max(0.1, self.motor_vibration)
 
-        # Accumulate runtime and calculate degradation (Task 4)
+        # Accumulate runtime and calculate degradation
         degradation_rate = 0.0
         if self.pump_rpm > 100:
             # Base normal wear-and-tear degradation

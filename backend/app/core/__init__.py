@@ -1,0 +1,1 @@
+from app.core.config import MONGO_URI, PORT, HOST, BASE_DIR

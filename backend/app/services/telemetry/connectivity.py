@@ -1,6 +1,7 @@
 import os
 import random
 import time
+from app.services.simulator.simulator import simulator
 
 class OPCUAClient:
     def __init__(self, endpoint_url="opc.tcp://192.168.1.50:4840"):
@@ -105,8 +106,8 @@ class ModbusTCPClient:
 
 
 class DataAcquisitionService:
-    def __init__(self, simulator):
-        self.simulator = simulator
+    def __init__(self, simulator_inst):
+        self.simulator = simulator_inst
         self.mode = "SIMULATOR"
         self.opc_client = OPCUAClient()
         self.modbus_client = ModbusTCPClient()
@@ -151,3 +152,6 @@ class DataAcquisitionService:
                 self.modbus_client.write_holding_register(40001, int(pump_rpm))
             if v101 is not None:
                 self.modbus_client.write_holding_register(40002, int(v101))
+
+# Instantiate singleton service
+daq_service = DataAcquisitionService(simulator)

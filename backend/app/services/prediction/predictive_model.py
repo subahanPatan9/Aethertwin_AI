@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 from pymongo import MongoClient
+from app.services.simulator.simulator import simulator
 
 class PredictiveModel:
     def __init__(self):
@@ -26,7 +27,6 @@ class PredictiveModel:
 
     def get_predictions(self, asset_id, live_fault=None, live_telemetry=None):
         if asset_id == "Pump-101" or asset_id == "Pump-P101":
-            from simulator import simulator
             sim_state = simulator.update()
             rul = sim_state.get("remaining_useful_life", "365.0 days")
             health = sim_state.get("pump_health_index", 100.0)
